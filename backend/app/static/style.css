@@ -1,0 +1,799 @@
+/* ====== БАЗОВЫЙ ДИЗАЙН WHOOPMANIA ====== */
+
+:root {
+  --wm-bg: #05060a;
+  --wm-bg-elevated: #0b0d13;
+  --wm-bg-soft: #11141d;
+  --wm-border-subtle: #222636;
+  --wm-border-strong: #2e3448;
+
+  --wm-text: #f5f7ff;
+  --wm-text-muted: #9ea3b7;
+  --wm-text-soft: #6d7284;
+
+  --wm-accent: #4f8cff;       /* основной акцент (синий) */
+  --wm-accent-soft: #2d3f66;
+  --wm-accent-hover: #6f9cff;
+
+  --wm-danger: #ff5066;
+
+  --wm-radius-lg: 16px;
+  --wm-radius-md: 10px;
+  --wm-radius-sm: 6px;
+
+  --wm-shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.45);
+  --wm-shadow-subtle: 0 1px 0 rgba(255, 255, 255, 0.02);
+
+  --wm-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+
+  --wm-transition-fast: 120ms ease-out;
+}
+
+/* ====== ОСНОВНОЕ ====== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: radial-gradient(circle at top, #151a2a 0, #05060a 45%);
+  color: var(--wm-text);
+  font-family: var(--wm-font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--wm-accent);
+  text-decoration: none;
+  transition: color var(--wm-transition-fast);
+}
+
+a:hover {
+  color: var(--wm-accent-hover);
+}
+
+.wm-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ====== КОНТЕЙНЕР ====== */
+
+.wm-container {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ====== HEADER ====== */
+
+.wm-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(14px);
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 7, 16, 0.95),
+    rgba(5, 7, 16, 0.88),
+    transparent
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: var(--wm-shadow-subtle);
+}
+
+.wm-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.wm-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.wm-logo a {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: var(--wm-text);
+}
+
+.wm-logo-tagline {
+  font-size: 11px;
+  color: var(--wm-text-soft);
+}
+
+.wm-nav {
+  display: flex;
+  gap: 12px;
+}
+
+.wm-nav a {
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--wm-text-muted);
+  border: 1px solid transparent;
+}
+
+.wm-nav a:hover {
+  color: var(--wm-text);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ====== MAIN ====== */
+
+.wm-main {
+  flex: 1;
+  padding: 20px 0 32px;
+}
+
+/* заголовки */
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+h1 {
+  font-size: 26px;
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+h3 {
+  font-size: 16px;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+p {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  color: var(--wm-text-muted);
+}
+
+/* ====== КАРТОЧКИ / БЛОКИ ====== */
+
+.wm-card {
+  background: radial-gradient(circle at top left, #171c2e 0, #0a0c14 60%);
+  border-radius: var(--wm-radius-lg);
+  border: 1px solid var(--wm-border-subtle);
+  box-shadow: var(--wm-shadow-soft);
+  padding: 16px 18px;
+  margin-bottom: 18px;
+}
+
+/* ====== ТАБЛИЦЫ ====== */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  background: rgba(6, 8, 16, 0.96);
+  border-radius: var(--wm-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--wm-border-subtle);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+thead {
+  background: radial-gradient(circle at top left, #262b3e 0, #151827 60%);
+}
+
+th,
+td {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--wm-text-soft);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  color: var(--wm-text);
+}
+
+td a {
+  font-weight: 500;
+}
+
+/* ====== FOOTER ====== */
+
+.wm-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: radial-gradient(circle at bottom, #111524 0, #05060a 60%);
+  padding: 10px 0 14px;
+  font-size: 11px;
+  color: var(--wm-text-soft);
+}
+
+.wm-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wm-footer-right {
+  opacity: 0.8;
+}
+
+/* ====== АДАПТИВ ====== */
+
+@media (max-width: 720px) {
+  .wm-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .wm-nav {
+    flex-wrap: wrap;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  th,
+  td {
+    padding: 5px 6px;
+  }
+}
+/* ====== ГЛАВНАЯ: КАРТОЧКИ СОБЫТИЙ ====== */
+
+.wm-events-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  margin-top: 12px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wm-events-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.wm-events-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wm-events-strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.wm-event-card {
+  flex: 0 0 190px; /* было 260px */
+  padding: 8px;
+  gap: 6px;
+  background: radial-gradient(circle at top left, #191e31 0, #0a0c14 65%);
+  border-radius: var(--wm-radius-lg);
+  border: 1px solid var(--wm-border-subtle);
+  box-shadow: var(--wm-shadow-soft);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--wm-text);
+  transition:
+    transform var(--wm-transition-fast),
+    box-shadow var(--wm-transition-fast),
+    border-color var(--wm-transition-fast),
+    background var(--wm-transition-fast);
+}
+
+.wm-event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: radial-gradient(circle at top left, #20263d 0, #0c0f18 65%);
+}
+
+.wm-event-poster {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(circle at top, #303853 0, #151827 60%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  /* современный способ задать формат — альбомный плакат ~3:2 */
+  aspect-ratio: 4 / 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* старый хак с ::before больше не нужен */
+.wm-event-poster::before {
+  content: none;
+}
+
+.wm-event-poster img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* показать постер целиком, а не резать */
+  display: block;
+}
+
+
+/* Если постер не загрузился — используем fallback слой */
+.wm-event-poster img.wm-poster-fallback {
+  opacity: 0;
+}
+
+.wm-poster-fallback-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  background: radial-gradient(circle at top, rgba(80, 105, 180, 0.35), rgba(5, 6, 12, 0.96));
+}
+
+.wm-event-short {
+  font-size: 13px;
+  font-weight: 600;
+  max-height: 2.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Нижняя часть карточки */
+
+.wm-event-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 4px 4px;
+}
+
+.wm-event-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wm-event-sub {
+  font-size: 12px;
+  color: var(--wm-text-soft);
+}
+
+/* Мобильная адаптация */
+
+@media (max-width: 720px) {
+  .wm-event-card {
+    flex: 0 0 220px;
+  }
+}
+/* ====== СТРАНИЦА "ВСЕ СОБЫТИЯ": КРУПНАЯ СЕТКА ====== */
+
+.wm-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 12px;
+}
+
+.wm-event-card-large {
+  background: radial-gradient(circle at top left, #191e31 0, #0a0c14 65%);
+  border-radius: var(--wm-radius-lg);
+  border: 1px solid var(--wm-border-subtle);
+  box-shadow: var(--wm-shadow-soft);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--wm-text);
+  transition:
+    transform var(--wm-transition-fast),
+    box-shadow var(--wm-transition-fast),
+    border-color var(--wm-transition-fast),
+    background var(--wm-transition-fast);
+  min-height: 260px;
+}
+
+.wm-event-card-large:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.75);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: radial-gradient(circle at top left, #222840 0, #0b0e18 65%);
+}
+
+/* Переиспользуем постер, как на главной:
+   .wm-event-poster, .wm-poster-fallback-layer, .wm-event-short
+   уже объявлены выше.
+*/
+
+.wm-event-meta-large {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 4px 2px;
+}
+
+.wm-event-name-large {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.wm-event-desc {
+  font-size: 12px;
+  color: var(--wm-text-soft);
+  max-height: 3.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* скрыть fallback по умолчанию */
+.wm-hide {
+  display: none !important;
+}
+
+/* если картинка НЕ загрузилась → показать fallback слой */
+.wm-event-poster img.wm-poster-fallback + .wm-poster-fallback-layer {
+  display: flex !important;
+}
+/* ====== АДМИН-ФОРМЫ ====== */
+
+.wm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.wm-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wm-form-row label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wm-text-soft);
+}
+
+.wm-form-row input[type="text"],
+.wm-form-row input[type="date"],
+.wm-form-row input[type="file"],
+.wm-form-row select,
+.wm-form-row textarea {
+  background: var(--wm-bg-soft);
+  border-radius: 8px;
+  border: 1px solid var(--wm-border-subtle);
+  padding: 6px 8px;
+  color: var(--wm-text);
+  font-family: var(--wm-font-sans);
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color var(--wm-transition-fast),
+    box-shadow var(--wm-transition-fast),
+    background var(--wm-transition-fast);
+}
+
+.wm-form-row textarea {
+  resize: vertical;
+}
+
+.wm-form-row input:focus,
+.wm-form-row select:focus,
+.wm-form-row textarea:focus {
+  border-color: var(--wm-accent);
+  box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.6);
+  background: #141828;
+}
+
+.wm-form-hint {
+  font-size: 11px;
+  color: var(--wm-text-soft);
+}
+
+.wm-form-actions {
+  margin-top: 8px;
+}
+
+.wm-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  background: var(--wm-accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(83, 132, 255, 0.45);
+  transition:
+    background var(--wm-transition-fast),
+    transform var(--wm-transition-fast),
+    box-shadow var(--wm-transition-fast);
+}
+
+.wm-btn-primary:hover {
+  background: var(--wm-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(83, 132, 255, 0.55);
+}
+/* ====== АДМИН-ДАШБОРД ====== */
+
+.wm-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.wm-admin-table .wm-admin-actions {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.wm-link-muted {
+  color: var(--wm-text-soft);
+  margin-left: 8px;
+}
+
+.wm-link-muted:hover {
+  color: var(--wm-accent);
+}
+/* инпуты в таблице редактирования квалы */
+
+.wm-admin-qual-wrapper {
+  margin-top: 6px;
+  overflow-x: auto;
+}
+
+.wm-input-small,
+.wm-input-medium,
+.wm-input-tiny {
+  background: #141828;
+  border-radius: 6px;
+  border: 1px solid var(--wm-border-subtle);
+  padding: 3px 5px;
+  color: var(--wm-text);
+  font-size: 12px;
+  font-family: var(--wm-font-sans);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wm-input-small {
+  max-width: 110px;
+}
+
+.wm-input-medium {
+  max-width: 180px;
+}
+
+.wm-input-tiny {
+  max-width: 70px;
+}
+.wm-admin-actions-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* второстепенная кнопка */
+.wm-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--wm-border-subtle);
+  background: rgba(10, 12, 20, 0.9);
+  color: var(--wm-text-soft);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background var(--wm-transition-fast),
+    border-color var(--wm-transition-fast),
+    color var(--wm-transition-fast),
+    transform var(--wm-transition-fast);
+}
+
+.wm-btn-secondary:hover {
+  background: #151827;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--wm-text);
+  transform: translateY(-1px);
+}
+.wm-pilot-qual {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--wm-text-soft);
+}
+/* ====== ТУРНИРНАЯ СЕТКА (EVENT DETAIL) ====== */
+.wm-bracket-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+/* сама сетка из карточек */
+.wm-bracket {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr)); /* было 4 */
+  grid-auto-rows: minmax(140px, auto);
+  gap: 18px 26px;
+  margin-top: 6px;
+}
+
+
+
+/* Общий вид карточки гонки */
+.wm-bracket-card {
+  background: radial-gradient(circle at top left, #1b2034 0, #090b14 70%);
+  border-radius: var(--wm-radius-lg);
+  border: 1px solid var(--wm-border-subtle);
+  box-shadow: var(--wm-shadow-soft);
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wm-bracket-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.wm-bracket-card-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wm-bracket-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--wm-text-soft);
+}
+
+.wm-bracket-badge {
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: rgba(88, 152, 255, 0.12);
+  border: 1px solid rgba(88, 152, 255, 0.5);
+  color: #c8d4ff;
+}
+
+.wm-bracket-side {
+  opacity: 0.8;
+}
+
+/* Таблица внутри карточки */
+.wm-bracket-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.wm-bracket-table thead th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--wm-text-soft);
+  padding: 2px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.wm-bracket-table tbody td {
+  padding: 2px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.wm-bracket-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.wm-bracket-pilot {
+  font-weight: 500;
+}
+
+/* Раскладка карточек по сетке (приближённо к твоему скрину) */
+
+.wm-race-1  { grid-column: 1; grid-row: 1; }
+.wm-race-2  { grid-column: 1; grid-row: 2; }
+.wm-race-3  { grid-column: 1; grid-row: 3; }
+.wm-race-4  { grid-column: 1; grid-row: 4; }
+
+.wm-race-5  { grid-column: 1; grid-row: 6; }
+.wm-race-7  { grid-column: 1; grid-row: 7; }
+
+.wm-race-6  { grid-column: 2; grid-row: 2; }
+.wm-race-8  { grid-column: 2; grid-row: 3; }
+
+.wm-race-9  { grid-column: 2; grid-row: 6; }
+.wm-race-10 { grid-column: 2; grid-row: 7; }
+
+.wm-race-11 { grid-column: 3; grid-row: 2; }
+.wm-race-12 { grid-column: 3; grid-row: 6; }
+
+.wm-race-13 { grid-column: 4; grid-row: 3; }  /* Полуфинал */
+.wm-race-14 { grid-column: 5; grid-row: 3; }  /* Финал */
+/* ====== СЕКЦИЯ ТУРНИРНОЙ СЕТКИ ====== */
+
+/* full-width секция, которая "выпрыгивает" из центральной колонки */
+.wm-bracket-section {
+  margin-top: 16px;
+  padding: 0 0 4px;      /* без отрицательных маргинов */
+}
+
+.wm-bracket-inner-header {
+  max-width: 1400px;
+  margin: 0 auto 4px;
+}
+
+
+.wm-bracket-inner {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  /* если хочешь, можно оставить лёгкий минимум, но не обязательный:
+     min-width: 900px; */
+}
+
+.wm-qual-top16 td {
+  background-color: rgba(250, 204, 21, 0.06) !important; /* Одинаковый фон у всех ячеек строки */
+}
+
+.wm-qual-top16 td:first-child {
+  border-left: 3px solid #fbbf24;
+}
+
+.wm-qual-top16 a {
+  
+}

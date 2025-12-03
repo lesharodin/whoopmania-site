@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>{% block title %}WhoopMania{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', path='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="wm-app">
+      <header class="wm-header">
+        <div class="wm-header-inner wm-container">
+          <div class="wm-logo">
+            <a href="/">WhoopMania</a>
+            <span class="wm-logo-tagline">Лучшие гонки на вупах</span>
+          </div>
+          <nav class="wm-nav">
+            <a href="/events">События</a>
+            <a href="/pilots">Пилоты</a>
+            <!-- <a href="/trainings">Тренировки</a> потом добавим -->
+          </nav>
+        </div>
+      </header>
+
+      <main class="wm-main">
+        <div class="wm-container">
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+
+      <footer class="wm-footer">
+        <div class="wm-container wm-footer-inner">
+          <span>© WhoopMania · {{ event.date if event is defined else "" }}</span>
+          <span class="wm-footer-right">
+            by @LeshaRodin 2025
+          </span>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Пилоты · WhoopMania{% endblock %}
+
+{% block content %}
+  <div class="wm-card">
+    <h2>Пилоты</h2>
+    {% if pilots %}
+      <ul>
+        {% for p in pilots %}
+          <li>
+            <a href="/pilots/{{ p.id }}">{{ p.nickname }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>Пока нет пилотов.</p>
+    {% endif %}
+  </div>
+{% endblock %}

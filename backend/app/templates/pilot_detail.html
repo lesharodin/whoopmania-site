@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ pilot.nickname }} · Пилот · WhoopMania{% endblock %}
+
+{% block content %}
+  <div class="wm-card">
+    <h2>{{ pilot.nickname }}</h2>
+    <p>
+      Участник серии WhoopMania.
+      {% if participations and participations|length > 0 %}
+        Участвовал в {{ participations|length }} событии(ях).
+      {% endif %}
+    </p>
+  </div>
+
+  {% if participations and participations|length > 0 %}
+    <div class="wm-card">
+      <h3>Участвовал в событиях</h3>
+      <div class="wm-events-strip">
+        {% for item in participations %}
+          {% set e = item.event %}
+          {% set q = item.qual %}
+          <a href="/events/{{ e.id }}" class="wm-event-card">
+            <div class="wm-event-poster">
+              <img
+                src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}"
+                alt="Афиша {{ e.name }}"
+                onerror="this.classList.add('wm-poster-fallback');"
+              />
+              <div class="wm-poster-fallback-layer wm-hide">
+                <span class="wm-event-short">
+                  {{ e.name }}
+                </span>
+              </div>
+            </div>
+            <div class="wm-event-meta">
+              <div class="wm-event-name">{{ e.name }}</div>
+              <div class="wm-event-sub">
+                {{ e.date }}
+                {% if e.location %} · {{ e.location }}{% endif %}
+              </div>
+              <div class="wm-pilot-qual">
+                {% if q.rank %}
+                  Квалификация: #{{ q.rank }}
+                {% else %}
+                  Квалификация: —
+                {% endif %}
+                {% if q.best3_avg_ms %}
+                  · лучшие 3 круга: {{ q.best3_avg_ms | format_ms }}
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <div class="wm-card">
+      <p>Данных об участии пилота в гонках пока нет.</p>
+    </div>
+  {% endif %}
+{% endblock %}

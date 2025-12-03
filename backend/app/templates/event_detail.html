@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} · WhoopMania{% endblock %}
+
+{% block content %}
+
+<h2>{{ event.name }}</h2>
+<p><strong>Дата:</strong> {{ event.date }}</p>
+<p><strong>Тип:</strong> {{ event.event_type }}</p>
+{% if event.location %}
+  <p><strong>Локация:</strong> {{ event.location }}</p>
+{% endif %}
+{% if event.description %}
+  <p>{{ event.description }}</p>
+{% endif %}
+
+<hr />
+
+<h3>Квалификация</h3>
+
+{% if qualification and qualification|length > 0 %}
+  <table id="qualification-table" border="1" cellpadding="4" cellspacing="0">
+    <thead>
+      <tr>
+        <th data-sort-key="rank">#</th>
+        <th data-sort-key="pilot">Пилот</th>
+        <th data-sort-key="best3">Лучшие 3 круга</th>
+        <th data-sort-key="bestlap">Лучший круг</th>
+        <th data-sort-key="laps">Всего кругов</th>
+        <th data-sort-key="attempts">Попыток</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in qualification if q.rank is not none %}
+        <tr class="{% if q.rank and q.rank <= 16 %}wm-qual-top16{% endif %}">
+          <td data-sort-value="{{ q.rank }}">{{ q.rank }}</td>
+
+          <td data-sort-value="{{ q.pilot.nickname | e }}">
+            <a href="/pilots/{{ q.pilot.id }}">{{ q.pilot.nickname }}</a>
+          </td>
+
+          <td data-best3-ms="{{ q.best3_avg_ms or '' }}"
+              data-consec="{{ q.consecutives_count or 0 }}">
+            {% if q.best3_avg_ms %}
+              {% if q.consecutives_count and q.consecutives_count < 3 %}
+                {{ q.consecutives_count }}/{{ q.best3_avg_ms | format_ms }}
+              {% else %}
+                {{ q.best3_avg_ms | format_ms }}
+              {% endif %}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td data-bestlap-ms="{{ q.best_lap_ms or '' }}">
+            {{ q.best_lap_ms | format_ms }}
+          </td>
+
+          <td data-sort-value="{{ q.laps_total or 0 }}">
+            {{ q.laps_total or "—" }}
+          </td>
+
+          <td data-sort-value="{{ q.attempts_count or 0 }}">
+            {{ q.attempts_count or "—" }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>Квалификация пока не загружена.</p>
+{% endif %}
+
+{# ============================================================
+   ТУРИРНАЯ СЕТКА (Double Elimination) — Full Width Layout
+   ============================================================ #}
+</div>
+<div class="wm-bracket-section">
+  <div class="wm-bracket-inner-header">
+    <h3>Сетка топ-16 (Double Elimination)</h3>
+  </div>
+
+{% if event.bracket_races and event.bracket_races|length > 0 %}
+
+  <div class="wm-bracket-scroll">
+    <div class="wm-bracket-inner">
+      <div class="wm-bracket">
+
+        {# ======== МАКРОС ПЕРЕВОДА ОЧКОВ → МЕСТО (1–4) ======== #}
+        {% macro place_from_points(points, total_points) -%}
+          {% if points is not none %}
+            {% if points == 3 %}
+              1
+            {% elif points == 2 %}
+              2
+            {% elif points == 1 %}
+              3
+            {% else %}
+              4
+            {% endif %}
+          {% else %}
+            {% if total_points is not none %}
+              4
+            {% else %}
+              —
+            {% endif %}
+          {% endif %}
+        {%- endmacro %}
+
+        {% for race in event.bracket_races | sort(attribute="number") %}
+        <div class="wm-bracket-card wm-race-{{ race.number }}">
+          
+          <div class="wm-bracket-card-header">
+            <div class="wm-bracket-card-title">{{ race.name }}</div>
+            <div class="wm-bracket-card-meta">
+              <span class="wm-bracket-badge">{{ race.short_label }}</span>
+              {% if race.bracket_side != 'final' %}
+                <span class="wm-bracket-side">
+                  {% if race.bracket_side == 'upper' %}
+                    Верхняя сетка
+                  {% elif race.bracket_side == 'lower' %}
+                    Нижняя сетка
+                  {% endif %}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <table class="wm-bracket-table">
+
+            {% set results = race.results | sort(attribute="final_position") %}
+
+            {# ====================== ФИНАЛ (5 вылетов) ====================== #}
+            {% if race.number == 14 %}
+              <thead>
+                <tr>
+                  <th>Пилот</th>
+                  <th>1</th>
+                  <th>2</th>
+                  <th>3</th>
+                  <th>4</th>
+                  <th>5</th>
+                  <th>Баллы</th>
+                  <th>Место</th>
+                </tr>
+              </thead>
+
+              <tbody>
+              {% if results and results|length > 0 %}
+                {% for r in results %}
+                  <tr>
+                    <td class="wm-bracket-pilot">
+                      {% if r.pilot %}
+                        <a href="/pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+
+                    <td>{{ place_from_points(r.points_r1, r.total_points) }}</td>
+                    <td>{{ place_from_points(r.points_r2, r.total_points) }}</td>
+                    <td>{{ place_from_points(r.points_r3, r.total_points) }}</td>
+                    <td>{{ place_from_points(r.points_r4, r.total_points) }}</td>
+                    <td>{{ place_from_points(r.points_r5, r.total_points) }}</td>
+
+                    <td>{{ r.total_points | float_clean }}</td>
+                    <td>{{ r.final_position or "—" }}</td>
+                  </tr>
+                {% endfor %}
+
+              {% else %}
+                {% for i in range(4) %}
+                  <tr>
+                    <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+                  </tr>
+                {% endfor %}
+              {% endif %}
+              </tbody>
+
+            {# ================= НЕ ФИНАЛ (3 вылета) ================= #}
+            {% else %}
+              <thead>
+                <tr>
+                  <th>Пилот</th>
+                  <th>1</th>
+                  <th>2</th>
+                  <th>3</th>
+                  <th>Баллы</th>
+                  <th>Место</th>
+                </tr>
+              </thead>
+
+              <tbody>
+              {% if results and results|length > 0 %}
+                {% for r in results %}
+                  <tr>
+                    <td class="wm-bracket-pilot">
+                      {% if r.pilot %}
+                        <a href="/pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+
+                    <td>{{ place_from_points(r.points_r1, r.total_points) }}</td>
+                    <td>{{ place_from_points(r.points_r2, r.total_points) }}</td>
+                    <td>{{ place_from_points(r.points_r3, r.total_points) }}</td>
+
+                    <td>{{ r.total_points | float_clean }}</td>
+                    <td>{{ r.final_position or "—" }}</td>
+                  </tr>
+                {% endfor %}
+
+              {% else %}
+                {% for i in range(4) %}
+                  <tr>
+                    <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+                  </tr>
+                {% endfor %}
+              {% endif %}
+              </tbody>
+            {% endif %}
+
+          </table>
+        </div>
+        {% endfor %}
+
+      </div> <!-- bracket -->
+    </div>   <!-- inner -->
+  </div>     <!-- scroll -->
+
+{% else %}
+  <div class="wm-bracket-inner-header"><p>Сетка ещё не создана.</p></div>
+{% endif %}
+
+</div> <!-- bracket-section -->
+
+{# ============================================================
+   JS: СОРТИРОВКА ТАБЛИЦЫ КВАЛИФИКАЦИИ
+   ============================================================ #}
+
+<style>
+  th {
+    cursor: pointer;
+    position: relative;
+    padding-right: 16px;
+  }
+  th.active-sort {
+    background: #f0f0f0;
+  }
+  th .arrow {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    opacity: 0.7;
+  }
+</style>
+
+<script>
+(function(){
+  const table = document.getElementById("qualification-table");
+  if (!table) return;
+
+  const tbody = table.querySelector("tbody");
+  const headers = table.querySelectorAll("th[data-sort-key]");
+  const SORT = { ASC: "asc", DESC: "desc" };
+
+  function clearArrows() {
+    headers.forEach(h=>{
+      h.classList.remove("active-sort");
+      const a = h.querySelector(".arrow");
+      if(a) a.remove();
+    });
+  }
+
+  function setArrow(th, dir) {
+    th.classList.add("active-sort");
+    const span = document.createElement("span");
+    span.className = "arrow";
+    span.textContent = dir === SORT.ASC ? "▲" : "▼";
+    th.appendChild(span);
+  }
+
+  headers.forEach((th, index)=>{
+    th.dataset.sortDir = "";
+
+    th.addEventListener("click", ()=>{
+      const key = th.dataset.sortKey;
+      const prev = th.dataset.sortDir;
+      const dir = prev === SORT.ASC ? SORT.DESC : SORT.ASC;
+      th.dataset.sortDir = dir;
+
+      clearArrows();
+      setArrow(th, dir);
+
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+
+      rows.sort((a,b)=>{
+        const A = a.children[index];
+        const B = b.children[index];
+
+        function num(v){
+          const n = Number(v);
+          return isNaN(n) ? null : n;
+        }
+
+        if(key==="pilot"){
+          const pa = A.dataset.sortValue.toLowerCase();
+          const pb = B.dataset.sortValue.toLowerCase();
+          return dir===SORT.ASC ? pa.localeCompare(pb) : pb.localeCompare(pa);
+        }
+
+        if(key==="best3"){
+          const ca = num(A.dataset.consec) ?? 0;
+          const cb = num(B.dataset.consec) ?? 0;
+          if(ca !== cb) return dir===SORT.ASC ? cb-ca : ca-cb;
+
+          const ma = num(A.dataset.best3Ms) ?? 999999999;
+          const mb = num(B.dataset.best3Ms) ?? 999999999;
+          return dir===SORT.ASC ? ma-mb : mb-ma;
+        }
+
+        if(key==="bestlap"){
+          const ma = num(A.dataset.bestlapMs) ?? 999999999;
+          const mb = num(B.dataset.bestlapMs) ?? 999999999;
+          return dir===SORT.ASC ? ma-mb : mb-ma;
+        }
+
+        const va = num(A.dataset.sortValue) ?? 0;
+        const vb = num(B.dataset.sortValue) ?? 0;
+        return dir===SORT.ASC ? va-vb : vb-va;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+
+})();
+</script>
+
+{% endblock %}

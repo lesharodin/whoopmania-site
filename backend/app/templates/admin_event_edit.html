@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование события · WhoopMania{% endblock %}
+
+{% block content %}
+  <!-- Карточка: редактирование события + квалы -->
+  <div class="wm-card">
+    <h2>Редактирование события</h2>
+    <p>Можно изменить данные гонки, перезалить афишу и RH JSON, а также поправить таблицу квалификации.</p>
+
+    <form
+      action="/admin/events/{{ event.id }}/edit"
+      method="post"
+      enctype="multipart/form-data"
+      class="wm-form"
+    >
+      <div class="wm-form-row">
+        <label for="name">Название события</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+          value="{{ event.name }}"
+        />
+      </div>
+
+      <div class="wm-form-row">
+        <label for="date_str">Дата (YYYY-MM-DD)</label>
+        <input
+          type="date"
+          id="date_str"
+          name="date_str"
+          required
+          value="{{ event.date }}"
+        />
+      </div>
+
+      <div class="wm-form-row">
+        <label for="location">Локация</label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          value="{{ event.location or '' }}"
+        />
+      </div>
+
+      <div class="wm-form-row">
+        <label for="description">Описание</label>
+        <textarea
+          id="description"
+          name="description"
+          rows="3"
+        >{{ event.description or '' }}</textarea>
+      </div>
+
+      <div class="wm-form-row">
+        <label for="event_type">Тип события</label>
+        <select id="event_type" name="event_type">
+          <option value="race"
+            {% if event.event_type == 'race' or event.event_type.value == 'race' %}
+              selected
+            {% endif %}
+          >
+            Гонка
+          </option>
+          <option value="training"
+            {% if event.event_type == 'training' or event.event_type.value == 'training' %}
+              selected
+            {% endif %}
+          >
+            Тренировка
+          </option>
+        </select>
+      </div>
+
+      <hr />
+
+      <div class="wm-form-row">
+        <label>Текущая афиша</label>
+        <p class="wm-form-hint">
+          На сайте используется файл <code>static/posters/event_{{ event.id }}.*</code>, если он есть.
+        </p>
+        <a href="/events/{{ event.id }}" target="_blank">Открыть страницу события</a>
+      </div>
+
+      <div class="wm-form-row">
+        <label for="poster">Новая афиша (jpg/png)</label>
+        <input
+          type="file"
+          id="poster"
+          name="poster"
+          accept="image/*"
+        />
+        <p class="wm-form-hint">
+          Если выбрать файл, старая афиша будет заменена.
+        </p>
+      </div>
+
+      <div class="wm-form-row">
+        <label for="rh_json_file">Новый RH JSON (квалификация)</label>
+        <input
+          type="file"
+          id="rh_json_file"
+          name="rh_json_file"
+          accept="application/json"
+        />
+        <p class="wm-form-hint">
+          При загрузке нового файла существующая таблица квалификации будет перезаписана.
+        </p>
+      </div>
+
+      <div class="wm-form-row">
+        <label for="rh_finals_file">RH JSON (финалы / групповые вылеты)</label>
+        <input
+          type="file"
+          id="rh_finals_file"
+          name="rh_finals_file"
+          accept="application/json"
+        />
+        <p class="wm-form-hint">
+          Этот файл используется для заполнения турнирной сетки (14 гонок, 3 вылета, в финале 5).
+        </p>
+      </div>
+
+      {% if qualification and qualification|length > 0 %}
+        <hr />
+        <h3>Редактирование квалификации</h3>
+        <p class="wm-form-hint">
+          Все времена указываются в миллисекундах (как в базе). Можно поправить ник, ранг, best3, лучший
+          круг, круги и попытки. При изменении ника строка может быть привязана к существующему пилоту.
+        </p>
+
+        <div class="wm-admin-qual-wrapper">
+          <table class="wm-admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Пилот (ник)</th>
+                <th>best3, ms</th>
+                <th>best lap, ms</th>
+                <th>Consec</th>
+                <th>Всего кругов</th>
+                <th>Попыток</th>
+                <th>Удалить</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for q in qualification if q.rank is not none %}
+                <tr>
+                  <td>
+                    <input
+                      type="number"
+                      name="q_{{ q.id }}_rank"
+                      value="{{ q.rank }}"
+                      class="wm-input-small"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      name="q_{{ q.id }}_nickname"
+                      value="{{ q.pilot.nickname }}"
+                      class="wm-input-medium"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      name="q_{{ q.id }}_best3"
+                      value="{{ q.best3_avg_ms or '' }}"
+                      class="wm-input-small"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      name="q_{{ q.id }}_bestlap"
+                      value="{{ q.best_lap_ms or '' }}"
+                      class="wm-input-small"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      name="q_{{ q.id }}_consec"
+                      value="{{ q.consecutives_count or '' }}"
+                      class="wm-input-tiny"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      name="q_{{ q.id }}_laps"
+                      value="{{ q.laps_total or '' }}"
+                      class="wm-input-tiny"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      name="q_{{ q.id }}_attempts"
+                      value="{{ q.attempts_count or '' }}"
+                      class="wm-input-tiny"
+                    />
+                  </td>
+                  <td>
+                  <input
+                      type="checkbox"
+                      name="q_{{ q.id }}_delete"
+                  />
+                  </td>                  
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+      <div class="wm-form-actions" style="margin-top: 12px;">
+        <button type="submit" class="wm-btn-primary">Сохранить изменения</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Отдельная карточка: управление сеткой -->
+  <div class="wm-card">
+    <h3>Турнирная сетка (Double Elimination, топ-16)</h3>
+
+    {% if event.bracket_races and event.bracket_races|length > 0 %}
+      <p class="wm-form-hint">
+        Ниже — все гонки сетки. Можно отредактировать ник пилота, очки по вылетам, сумму и место.
+        При изменении ника будет найден существующий пилот с таким же ником или создан новый.
+      </p>
+
+      <form method="post" action="/admin/events/{{ event.id }}/edit">
+        <div class="wm-bracket-admin">
+          {% for race in event.bracket_races|sort(attribute="number") %}
+            <div class="wm-bracket-card">
+              <div class="wm-bracket-card-header">
+                <div class="wm-bracket-card-title">
+                  {{ race.name }}
+                </div>
+                <div class="wm-bracket-card-meta">
+                  <span class="wm-bracket-badge">{{ race.short_label }}</span>
+                  {% if race.bracket_side != 'final' %}
+                    <span class="wm-bracket-side">
+                      {% if race.bracket_side == 'upper' %}
+                        Верхняя сетка
+                      {% elif race.bracket_side == 'lower' %}
+                        Нижняя сетка
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <table class="wm-bracket-table">
+                <thead>
+                  <tr>
+                    <th>Пилот</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                    <th>4</th>
+                    <th>5</th>
+                    <th>Баллы</th>
+                    <th>Место</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in race.results|sort(attribute="final_position") %}
+                    <tr>
+                      <td class="wm-bracket-pilot">
+                        <input
+                          type="text"
+                          name="br_{{ r.id }}_nickname"
+                          value="{{ r.pilot.nickname if r.pilot else '' }}"
+                          class="wm-input-medium"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          name="br_{{ r.id }}_r1"
+                          value="{{ r.points_r1 or '' }}"
+                          class="wm-input-tiny"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          name="br_{{ r.id }}_r2"
+                          value="{{ r.points_r2 or '' }}"
+                          class="wm-input-tiny"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          name="br_{{ r.id }}_r3"
+                          value="{{ r.points_r3 or '' }}"
+                          class="wm-input-tiny"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          name="br_{{ r.id }}_r4"
+                          value="{{ r.points_r4 or '' }}"
+                          class="wm-input-tiny"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          name="br_{{ r.id }}_r5"
+                          value="{{ r.points_r5 or '' }}"
+                          class="wm-input-tiny"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          name="br_{{ r.id }}_total"
+                          value="{{ r.total_points or '' }}"
+                          class="wm-input-tiny"
+                          step="0.1"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          name="br_{{ r.id }}_pos"
+                          value="{{ r.final_position or '' }}"
+                          class="wm-input-tiny"
+                          min="1"
+                          max="4"
+                        />
+                      </td>
+                      <input
+                        type="hidden"
+                        name="br_{{ r.id }}_slot"
+                        value="{{ r.slot_index or '' }}"
+                      />
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="wm-form-actions" style="margin-top: 8px;">
+          <button type="submit" class="wm-btn-secondary">
+            Сохранить изменения сетки
+          </button>
+        </div>
+      </form>
+
+    {% else %}
+      <p>У этого события пока нет турнирной сетки.</p>
+      <form method="post" action="/admin/events/{{ event.id }}/create_bracket">
+        <button type="submit" class="wm-btn-primary">
+          Создать сетку топ-16 Double Elimination
+        </button>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

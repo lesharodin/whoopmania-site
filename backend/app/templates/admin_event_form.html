@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Новое событие · WhoopMania Admin{% endblock %}
+
+{% block content %}
+  <div class="wm-card">
+    <h2>Создать новое событие</h2>
+    <p>Заполни данные гонки и при желании сразу загрузи афишу и RH JSON с квалификацией.</p>
+
+    <form
+      action="/admin/events/new"
+      method="post"
+      enctype="multipart/form-data"
+      class="wm-form"
+    >
+      <div class="wm-form-row">
+        <label for="name">Название события</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+          placeholder="WhoopMania S1 T4"
+        />
+      </div>
+
+      <div class="wm-form-row">
+        <label for="date_str">Дата (YYYY-MM-DD)</label>
+        <input
+          type="date"
+          id="date_str"
+          name="date_str"
+          required
+        />
+      </div>
+
+      <div class="wm-form-row">
+        <label for="location">Локация</label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          placeholder="Москва, WhoopClub"
+        />
+      </div>
+
+      <div class="wm-form-row">
+        <label for="description">Описание</label>
+        <textarea
+          id="description"
+          name="description"
+          rows="3"
+          placeholder="Кратко о формате гонки, классе, особенностях."
+        ></textarea>
+      </div>
+
+      <div class="wm-form-row">
+        <label for="event_type">Тип события</label>
+        <select id="event_type" name="event_type">
+          <option value="race" selected>Гонка</option>
+          <option value="training">Тренировка</option>
+        </select>
+      </div>
+
+      <hr />
+
+      <div class="wm-form-row">
+        <label for="poster">Афиша (jpg/png)</label>
+        <input
+          type="file"
+          id="poster"
+          name="poster"
+          accept="image/*"
+        />
+        <p class="wm-form-hint">
+          Файл будет сохранён как <code>event_ID.jpg/png</code> и показан на главной и в списке событий.
+        </p>
+      </div>
+
+      <div class="wm-form-row">
+        <label for="rh_json_file">RH JSON (квалификация)</label>
+        <input
+          type="file"
+          id="rh_json_file"
+          name="rh_json_file"
+          accept="application/json"
+        />
+        <p class="wm-form-hint">
+          Сюда можно загрузить экспорт RotorHazard с квалификацией.
+        </p>
+      </div>
+
+      <div class="wm-form-actions">
+        <button type="submit" class="wm-btn-primary">Создать событие</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

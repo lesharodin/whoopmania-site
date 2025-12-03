@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Админка · WhoopMania{% endblock %}
+
+{% block content %}
+  <div class="wm-card">
+    <div class="wm-admin-header">
+    <div>
+        <h2>Админка</h2>
+        <p>Управление событиями WhoopMania.</p>
+    </div>
+    <div class="wm-admin-actions-header">
+        <form action="/admin/pilots/dedupe" method="post" style="display:inline;">
+        <button type="submit" class="wm-btn-secondary">
+            Убрать дубли пилотов
+        </button>
+        </form>
+        <form action="/admin/dev/cleanup_orphan_pilots" method="post" style="display:inline;">
+        <button type="submit" class="wm-btn-secondary">
+            Убрать лишних пилотов
+        </button>
+        </form>
+        <a href="/admin/events/new" class="wm-btn-primary">
+        + Создать событие
+        </a>
+    </div>
+    </div>
+
+
+    {% if events %}
+      <table class="wm-admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Дата</th>
+            <th>Локация</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in events %}
+            <tr>
+              <td>{{ e.id }}</td>
+              <td>{{ e.name }}</td>
+              <td>{{ e.date }}</td>
+              <td>{{ e.location or "—" }}</td>
+              <td class="wm-admin-actions">
+                <a href="/events/{{ e.id }}" target="_blank">Открыть</a>
+                <a href="/admin/events/{{ e.id }}/edit" class="wm-link-muted">
+                  Редактировать
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Событий пока нет.</p>
+    {% endif %}
+  </div>
+{% endblock %}

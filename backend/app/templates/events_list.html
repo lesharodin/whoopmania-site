@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Все события · WhoopMania{% endblock %}
+
+{% block content %}
+  <div class="wm-card">
+    <h2>Все события</h2>
+    <p>Гонки серии WhoopMania и связанные мероприятия.</p>
+
+    {% if events %}
+      <div class="wm-events-grid">
+        {% for e in events %}
+          <a href="/events/{{ e.id }}" class="wm-event-card-large">
+            <div class="wm-event-poster">
+              <img
+                src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}"
+                alt="Афиша {{ e.name }}"
+                onerror="this.classList.add('wm-poster-fallback');"
+              />
+              <div class="wm-poster-fallback-layer wm-hide">
+                <span class="wm-event-short">
+                  {{ e.name }}
+                </span>
+              </div>
+            </div>
+
+            <div class="wm-event-meta-large">
+              <div class="wm-event-name-large">{{ e.name }}</div>
+              <div class="wm-event-sub">
+                {{ e.date }}
+                {% if e.location %} · {{ e.location }}{% endif %}
+              </div>
+              {% if e.description %}
+                <div class="wm-event-desc">
+                  {{ e.description }}
+                </div>
+              {% endif %}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Пока нет событий.</p>
+    {% endif %}
+  </div>
+{% endblock %}

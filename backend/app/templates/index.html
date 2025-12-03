@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}WhoopMania · Главная{% endblock %}
+
+{% block content %}
+  <div class="wm-card">
+    <h2>Последние события</h2>
+    <p>Прошедшие гонки WhoopMania</p>
+
+    {% if events %}
+      <div class="wm-events-strip">
+        {% for e in events %}
+          <a href="/events/{{ e.id }}" class="wm-event-card">
+            <div class="wm-event-poster">
+              <!--
+                По умолчанию постер берём по пути:
+                /static/posters/event_{{ e.id }}.jpg
+
+                Ты можешь положить свои афиши сюда:
+                backend/app/static/posters/event_1.jpg
+                backend/app/static/posters/event_2.jpg
+                и т.д.
+              -->
+              <img
+                src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}"
+                alt="Афиша {{ e.name }}"
+                onerror="this.classList.add('wm-poster-fallback');"
+              />
+              <div class="wm-poster-fallback-layer wm-hide">
+                <span class="wm-event-short">
+                  {{ e.name }}
+                </span>
+              </div>
+            </div>
+            <div class="wm-event-meta">
+              <div class="wm-event-name">{{ e.name }}</div>
+              <div class="wm-event-sub">
+                {{ e.date }}
+                {% if e.location %} · {{ e.location }}{% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Пока нет событий.</p>
+    {% endif %}
+  </div>
+{% endblock %}
