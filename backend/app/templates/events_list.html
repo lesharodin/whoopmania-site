@@ -10,7 +10,7 @@
     {% if events %}
       <div class="wm-events-grid">
         {% for e in events %}
-          <a href="/events/{{ e.id }}" class="wm-event-card-large">
+          <a href="events/{{ e.id }}" class="wm-event-card-large">
             <div class="wm-event-poster">
               <img
                 src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}"
