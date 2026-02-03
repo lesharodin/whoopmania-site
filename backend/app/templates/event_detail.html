@@ -36,7 +36,7 @@
           <td data-sort-value="{{ q.rank }}">{{ q.rank }}</td>
 
           <td data-sort-value="{{ q.pilot.nickname | e }}">
-            <a href="/pilots/{{ q.pilot.id }}">{{ q.pilot.nickname }}</a>
+            <a href="pilots/{{ q.pilot.id }}">{{ q.pilot.nickname }}</a>
           </td>
 
           <td data-best3-ms="{{ q.best3_avg_ms or '' }}"
@@ -151,7 +151,7 @@
                   <tr>
                     <td class="wm-bracket-pilot">
                       {% if r.pilot %}
-                        <a href="/pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
+                        <a href="pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
                       {% else %}
                         —
                       {% endif %}
@@ -196,7 +196,7 @@
                   <tr>
                     <td class="wm-bracket-pilot">
                       {% if r.pilot %}
-                        <a href="/pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
+                        <a href="pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
                       {% else %}
                         —
                       {% endif %}

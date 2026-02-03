@@ -20,7 +20,7 @@
         {% for item in participations %}
           {% set e = item.event %}
           {% set q = item.qual %}
-          <a href="/events/{{ e.id }}" class="wm-event-card">
+          <a href="events/{{ e.id }}" class="wm-event-card">
             <div class="wm-event-poster">
               <img
                 src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}"
