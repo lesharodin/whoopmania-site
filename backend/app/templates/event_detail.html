@@ -150,8 +150,10 @@
                 {% for r in results %}
                   <tr>
                     <td class="wm-bracket-pilot">
-                      {% if r.pilot %}
-                        <a href="./pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
+                      {% if r.pilot and r.pilot.id %}
+                        <a href="{{ url_for('pilot_detail', pilot_id=r.pilot.id) }}">
+                          {{ r.pilot.nickname }}
+                        </a>
                       {% else %}
                         —
                       {% endif %}
@@ -195,8 +197,10 @@
                 {% for r in results %}
                   <tr>
                     <td class="wm-bracket-pilot">
-                      {% if r.pilot %}
-                        <a href="./pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
+                      {% if r.pilot and r.pilot.id %}
+                        <a href="{{ url_for('pilot_detail', pilot_id=r.pilot.id) }}">
+                          {{ r.pilot.nickname }}
+                        </a>
                       {% else %}
                         —
                       {% endif %}
