@@ -10,12 +10,20 @@ from .db import Base, engine
 
 from . import models  # noqa: F401  # важно, чтобы модели подхватились
 
-
-app = FastAPI(title="WhoopMania")
+app = FastAPI(root_path="/whoopmania")
 
 Base.metadata.create_all(bind=engine)
 
-app.mount("/static", StaticFiles(directory="backend/app/static"), name="static")
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "static"),
+    name="static",
+)
+
 
 app.include_router(pages.router)
 app.include_router(events.router)
