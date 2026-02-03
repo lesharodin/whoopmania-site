@@ -151,7 +151,7 @@
                   <tr>
                     <td class="wm-bracket-pilot">
                       {% if r.pilot %}
-                        <a href="{{ url_for('pilot_detail', pilot_id=r.pilot.id) }}">{{ r.pilot.nickname }}</a>
+                        <a href="./pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
                       {% else %}
                         —
                       {% endif %}
@@ -196,7 +196,7 @@
                   <tr>
                     <td class="wm-bracket-pilot">
                       {% if r.pilot %}
-                        <a href="{{ url_for('pilot_detail', pilot_id=r.pilot.id) }}">{{ r.pilot.nickname }}</a>
+                        <a href="./pilots/{{ r.pilot.id }}">{{ r.pilot.nickname }}</a>
                       {% else %}
                         —
                       {% endif %}
