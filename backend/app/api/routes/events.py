@@ -46,7 +46,7 @@ def create_sample_events(db: Session = Depends(get_db)):
     return {"status": "created", "count": 2}
 
 
-@router.get("/events", include_in_schema=False)
+@router.get("", include_in_schema=False, name="events")
 async def events_list(
     request: Request,
     db: Session = Depends(get_db),
@@ -60,7 +60,7 @@ async def events_list(
     )
 
 
-@router.get("/{event_id}", include_in_schema=False)
+@router.get("/{event_id}", include_in_schema=False, name="event_detail")
 async def event_detail(
     request: Request,
     event_id: int,

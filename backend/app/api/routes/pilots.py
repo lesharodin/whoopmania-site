@@ -17,7 +17,7 @@ templates = Jinja2Templates(directory="backend/app/templates")
 templates.env.filters["format_ms"] = format_ms
 
 
-@router.get("/pilots", include_in_schema=False)
+@router.get("", include_in_schema=False, name="pilots")
 async def pilots_list(
     request: Request,
     db: Session = Depends(get_db),
@@ -31,7 +31,7 @@ async def pilots_list(
     )
 
 
-@router.get("/{pilot_id}", include_in_schema=False)
+@router.get("/{pilot_id}", include_in_schema=False, name="pilot_detail")
 async def pilot_detail(
     pilot_id: int,
     request: Request,
