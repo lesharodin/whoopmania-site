@@ -4,10 +4,6 @@
     <meta charset="utf-8" />
     <title>{% block title %}WhoopMania{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <!-- 🔑 ВАЖНО: базовый путь -->
-    <base href="/whoopmania/">
-
     <link
       rel="stylesheet"
       href="{{ url_for('static', path='style.css') }}"
@@ -19,14 +15,14 @@
         <div class="wm-header-inner wm-container">
           <div class="wm-logo">
             <!-- ❌ было "/" -->
-            <a href="">WhoopMania</a>
+            <a href="{{ url_for('index') }}">WhoopMania</a>
             <span class="wm-logo-tagline">Лучшие гонки на вупах</span>
           </div>
           <nav class="wm-nav">
             <!-- ❌ было "/events" -->
-            <a href="./events">События</a>
+            <a href="{{ url_for('events') }}">События</a>
             <!-- ❌ было "/pilots" -->
-            <a href="./pilots">Пилоты</a>
+            <a href="{{ url_for('pilots') }}">Пилоты</a>
             <!-- <a href="trainings">Тренировки</a> -->
           </nav>
         </div>
