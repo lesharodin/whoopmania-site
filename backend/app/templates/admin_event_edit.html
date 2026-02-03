@@ -9,7 +9,7 @@
     <p>Можно изменить данные гонки, перезалить афишу и RH JSON, а также поправить таблицу квалификации.</p>
 
     <form
-      action="/admin/events/{{ event.id }}/edit"
+      action="/events/{{ event.id }}/edit"
       method="post"
       enctype="multipart/form-data"
       class="wm-form"
@@ -234,7 +234,7 @@
         При изменении ника будет найден существующий пилот с таким же ником или создан новый.
       </p>
 
-      <form method="post" action="/admin/events/{{ event.id }}/edit">
+      <form method="post" action="/events/{{ event.id }}/edit">
         <div class="wm-bracket-admin">
           {% for race in event.bracket_races|sort(attribute="number") %}
             <div class="wm-bracket-card">
@@ -361,7 +361,7 @@
 
     {% else %}
       <p>У этого события пока нет турнирной сетки.</p>
-      <form method="post" action="/admin/events/{{ event.id }}/create_bracket">
+      <form method="post" action="/events/{{ event.id }}/create_bracket">
         <button type="submit" class="wm-btn-primary">
           Создать сетку топ-16 Double Elimination
         </button>
