@@ -16,7 +16,7 @@ templates.env.filters["format_ms"] = format_ms
 
 
 
-@router.get("/", include_in_schema=False)
+@router.get("/", include_in_schema=False, name="index")
 async def index(
     request: Request,
     db: Session = Depends(get_db),
