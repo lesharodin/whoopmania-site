@@ -21,6 +21,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import exists
 
 from ...db import get_db
 from ...models.event import Event, EventType
@@ -50,6 +51,10 @@ def admin_auth(credentials: HTTPBasicCredentials = Depends(security)) -> str:
 
 router = APIRouter(
     prefix="/admin",
+    tags=["admin"],
+    dependencies=[Depends(admin_auth)],
+)
+maintenance_router = APIRouter(
     tags=["admin"],
     dependencies=[Depends(admin_auth)],
 )
@@ -243,3 +248,66 @@ async def admin_create_bracket(
         url=request.url_for("admin_edit_event", event_id=event_id),
         status_code=303,
     )
+
+
+@maintenance_router.post("/pilots/dedupe", include_in_schema=False, name="admin_dedupe_pilots")
+async def admin_dedupe_pilots(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    nicknames = db.scalars(
+        select(Pilot.nickname).where(Pilot.nickname.is_not(None)).distinct()
+    ).all()
+
+    for nickname in nicknames:
+        pilots = db.scalars(
+            select(Pilot).where(Pilot.nickname == nickname).order_by(Pilot.id.asc())
+        ).all()
+        if len(pilots) < 2:
+            continue
+
+        primary = pilots[0]
+        duplicates = pilots[1:]
+
+        for dup in duplicates:
+            db.query(QualificationResult).filter(
+                QualificationResult.pilot_id == dup.id
+            ).update({"pilot_id": primary.id}, synchronize_session=False)
+            db.query(BracketRaceResult).filter(
+                BracketRaceResult.pilot_id == dup.id
+            ).update({"pilot_id": primary.id}, synchronize_session=False)
+            db.delete(dup)
+
+    db.commit()
+    return RedirectResponse(url=request.url_for("admin_index"), status_code=303)
+
+
+@maintenance_router.post(
+    "/dev/cleanup_orphan_pilots",
+    include_in_schema=False,
+    name="admin_cleanup_orphan_pilots",
+)
+async def admin_cleanup_orphan_pilots(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    orphan_pilots = db.scalars(
+        select(Pilot).where(
+            ~exists(
+                select(QualificationResult.id).where(
+                    QualificationResult.pilot_id == Pilot.id
+                )
+            ),
+            ~exists(
+                select(BracketRaceResult.id).where(
+                    BracketRaceResult.pilot_id == Pilot.id
+                )
+            ),
+        )
+    ).all()
+
+    for pilot in orphan_pilots:
+        db.delete(pilot)
+
+    db.commit()
+    return RedirectResponse(url=request.url_for("admin_index"), status_code=303)

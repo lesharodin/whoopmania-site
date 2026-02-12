@@ -10,17 +10,17 @@
         <p>Управление событиями WhoopMania.</p>
     </div>
     <div class="wm-admin-actions-header">
-        <form action="/pilots/dedupe" method="post" style="display:inline;">
+        <form action="{{ url_for('admin_dedupe_pilots') }}" method="post" style="display:inline;">
         <button type="submit" class="wm-btn-secondary">
             Убрать дубли пилотов
         </button>
         </form>
-        <form action="/dev/cleanup_orphan_pilots" method="post" style="display:inline;">
+        <form action="{{ url_for('admin_cleanup_orphan_pilots') }}" method="post" style="display:inline;">
         <button type="submit" class="wm-btn-secondary">
             Убрать лишних пилотов
         </button>
         </form>
-        <a href="admin/events/new" class="wm-btn-primary">
+        <a href="{{ url_for('admin_new_event_form') }}" class="wm-btn-primary">
         + Создать событие
         </a>
     </div>
@@ -46,8 +46,8 @@
               <td>{{ e.date }}</td>
               <td>{{ e.location or "—" }}</td>
               <td class="wm-admin-actions">
-                <a href="events/{{ e.id }}" target="_blank">Открыть</a>
-                <a href="admin/events/{{ e.id }}/edit" class="wm-link-muted">
+                <a href="{{ url_for('event_detail', event_id=e.id) }}" target="_blank">Открыть</a>
+                <a href="{{ url_for('admin_edit_event', event_id=e.id) }}" class="wm-link-muted">
                   Редактировать
                 </a>
               </td>

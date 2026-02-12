@@ -9,7 +9,7 @@
       <ul>
         {% for p in pilots %}
           <li>
-            <a href="pilots/{{ p.id }}">{{ p.nickname }}</a>
+            <a href="{{ url_for('pilot_detail', pilot_id=p.id) }}">{{ p.nickname }}</a>
           </li>
         {% endfor %}
       </ul>

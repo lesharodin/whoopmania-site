@@ -30,3 +30,4 @@ app.include_router(events.router)
 app.include_router(pilots.router)   # новый роутер
 app.include_router(qual_import.router)   # ← подключить
 app.include_router(admin.router)   # ← ДОБАВЬ
+app.include_router(admin.maintenance_router)
