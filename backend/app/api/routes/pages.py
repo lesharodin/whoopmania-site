@@ -1,8 +1,10 @@
 # backend/app/api/routes/pages.py
 
 import time
+from pathlib import Path
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,6 +18,15 @@ templates = Jinja2Templates(directory="backend/app/templates")
 from ...utils.formatting import format_ms
 templates.env.filters["format_ms"] = format_ms
 
+
+@router.get("/posters/event_{event_id}", include_in_schema=False, name="event_poster")
+async def event_poster(event_id: int):
+    posters_dir = Path(__file__).resolve().parents[2] / "static" / "posters"
+    for ext in (".jpg", ".png"):
+        candidate = posters_dir / f"event_{event_id}{ext}"
+        if candidate.exists():
+            return FileResponse(candidate)
+    raise HTTPException(status_code=404, detail="Poster not found")
 
 
 @router.get("/", include_in_schema=False, name="index")
