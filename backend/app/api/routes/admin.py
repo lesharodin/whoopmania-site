@@ -4,6 +4,7 @@ import json
 import logging
 import secrets
 from datetime import date
+from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import (
@@ -136,6 +137,28 @@ def import_qualification_rows(
     return imported
 
 
+async def save_event_poster(event_id: int, poster_file: UploadFile) -> str:
+    filename = poster_file.filename or ""
+    ext = Path(filename).suffix.lower()
+    if ext == ".jpeg":
+        ext = ".jpg"
+    if ext not in {".jpg", ".png"}:
+        raise ValueError("Poster must be .jpg/.jpeg or .png")
+
+    app_dir = Path(__file__).resolve().parents[2]
+    posters_dir = app_dir / "static" / "posters"
+    posters_dir.mkdir(parents=True, exist_ok=True)
+
+    # Keep only one active poster file per event id.
+    for old_file in posters_dir.glob(f"event_{event_id}.*"):
+        old_file.unlink(missing_ok=True)
+
+    target = posters_dir / f"event_{event_id}{ext}"
+    payload = await poster_file.read()
+    target.write_bytes(payload)
+    return target.name
+
+
 # ----------------------------------------------------------------
 # views
 # ----------------------------------------------------------------
@@ -192,6 +215,22 @@ async def admin_create_event(
     db.add(event)
     db.commit()
     db.refresh(event)
+
+    if poster and poster.filename:
+        try:
+            saved_name = await save_event_poster(event.id, poster)
+            logger.info(
+                "Poster saved on create for event_id=%s, filename=%s",
+                event.id,
+                saved_name,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to save poster on create for event_id=%s, filename=%s",
+                event.id,
+                poster.filename,
+            )
+            raise HTTPException(status_code=400, detail="Ошибка загрузки афиши")
 
     if rh_json_file and rh_json_file.filename:
         try:
@@ -258,7 +297,11 @@ async def admin_update_event(
         raise HTTPException(status_code=404, detail="Event not found")
 
     form = await request.form()
-    logger.info("Admin update started for event_id=%s", event_id)
+    logger.info(
+        "Admin update started for event_id=%s, form_keys=%s",
+        event_id,
+        sorted(form.keys()),
+    )
 
     name = (form.get("name") or event.name or "").strip()
     event.name = name or event.name
@@ -290,8 +333,33 @@ async def admin_update_event(
                 event_type,
             )
 
+    poster_file = form.get("poster")
+    if poster_file is not None and getattr(poster_file, "filename", ""):
+        try:
+            saved_name = await save_event_poster(event_id, poster_file)
+            logger.info(
+                "Poster saved for event_id=%s, filename=%s",
+                event_id,
+                saved_name,
+            )
+        except ValueError as exc:
+            logger.warning(
+                "Poster validation failed for event_id=%s, filename=%s: %s",
+                event_id,
+                poster_file.filename,
+                exc,
+            )
+            raise HTTPException(status_code=400, detail=str(exc))
+        except Exception:
+            logger.exception(
+                "Failed to save poster for event_id=%s, filename=%s",
+                event_id,
+                poster_file.filename,
+            )
+            raise HTTPException(status_code=500, detail="Ошибка загрузки афиши")
+
     rh_json_file = form.get("rh_json_file")
-    if isinstance(rh_json_file, UploadFile) and rh_json_file.filename:
+    if rh_json_file is not None and getattr(rh_json_file, "filename", ""):
         try:
             payload = await rh_json_file.read()
             rh_json = json.loads(payload.decode("utf-8"))
@@ -326,8 +394,36 @@ async def admin_update_event(
             )
             raise HTTPException(status_code=500, detail="Ошибка импорта RH JSON")
 
+    stmt = select(QualificationResult).where(QualificationResult.event_id == event_id)
+    qualification_rows = db.scalars(stmt).all()
+    qual_updated = 0
+    qual_deleted = 0
+    for q in qualification_rows:
+        prefix = f"q_{q.id}_"
+        if form.get(f"{prefix}delete"):
+            db.delete(q)
+            qual_deleted += 1
+            continue
+
+        nickname = (form.get(f"{prefix}nickname") or "").strip()
+        if nickname:
+            q.pilot = get_or_create_pilot(db, nickname)
+
+        q.rank = parse_optional_int(form.get(f"{prefix}rank"))
+        q.best3_avg_ms = parse_optional_int(form.get(f"{prefix}best3"))
+        q.best_lap_ms = parse_optional_int(form.get(f"{prefix}bestlap"))
+        q.consecutives_count = parse_optional_int(form.get(f"{prefix}consec"))
+        q.laps_total = parse_optional_int(form.get(f"{prefix}laps"))
+        q.attempts_count = parse_optional_int(form.get(f"{prefix}attempts"))
+        qual_updated += 1
+
     db.commit()
-    logger.info("Admin update completed for event_id=%s", event_id)
+    logger.info(
+        "Admin update completed for event_id=%s, qual_updated=%s, qual_deleted=%s",
+        event_id,
+        qual_updated,
+        qual_deleted,
+    )
 
     return RedirectResponse(
         url=request.url_for("admin_edit_event", event_id=event.id),

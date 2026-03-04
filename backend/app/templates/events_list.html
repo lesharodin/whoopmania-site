@@ -15,7 +15,7 @@
               <img
                 src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}"
                 alt="Афиша {{ e.name }}"
-                onerror="this.classList.add('wm-poster-fallback');"
+                onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src='{{ url_for('static', path='posters/event_' ~ e.id ~ '.png') }}';}else{this.classList.add('wm-poster-fallback');}"
               />
               <div class="wm-poster-fallback-layer wm-hide">
                 <span class="wm-event-short">

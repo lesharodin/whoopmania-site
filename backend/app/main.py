@@ -6,16 +6,19 @@ from fastapi.staticfiles import StaticFiles
 from .api.routes import pages, events, pilots   # добавим pilots
 from .api.routes import qual_import   # ← добавить импорт
 from .api.routes import admin   # ← ДОБАВЬ
-from .db import Base, engine
+from .db import Base, engine, DB_FILE_PATH
 from .logging_setup import configure_logging
+import logging
 
 from . import models  # noqa: F401  # важно, чтобы модели подхватились
 
 configure_logging()
+logger = logging.getLogger("whoopmania.startup")
 
 app = FastAPI(root_path="/whoopmania")
 
 Base.metadata.create_all(bind=engine)
+logger.info("Using SQLite DB file: %s", DB_FILE_PATH)
 
 from pathlib import Path
 

@@ -2,8 +2,10 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from pathlib import Path
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./whoopmania.db"
+DB_FILE_PATH = (Path(__file__).resolve().parents[2] / "whoopmania.db").resolve()
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_FILE_PATH}"
 
 # Для SQLite в однопоточной FastAPI нужно отключить check_same_thread
 engine = create_engine(
