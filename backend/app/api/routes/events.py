@@ -1,6 +1,7 @@
 # backend/app/api/routes/events.py
 
 from datetime import date
+import time
 
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
@@ -56,7 +57,7 @@ async def events_list(
 
     return templates.TemplateResponse(
         "events_list.html",
-        {"request": request, "events": events},
+        {"request": request, "events": events, "cache_bust": int(time.time())},
     )
 
 

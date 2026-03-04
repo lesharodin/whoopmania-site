@@ -1,5 +1,7 @@
 # backend/app/api/routes/pages.py
 
+import time
+
 from fastapi import APIRouter, Request, Depends
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
@@ -30,5 +32,6 @@ async def index(
         {
             "request": request,
             "events": events,
+            "cache_bust": int(time.time()),
         },
     )

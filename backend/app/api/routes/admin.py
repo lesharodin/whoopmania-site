@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import secrets
 from datetime import date
 from pathlib import Path
@@ -20,7 +21,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import exists
 
@@ -359,12 +360,14 @@ async def admin_update_event(
             raise HTTPException(status_code=500, detail="Ошибка загрузки афиши")
 
     rh_json_file = form.get("rh_json_file")
+    json_uploaded = False
     if rh_json_file is not None and getattr(rh_json_file, "filename", ""):
         try:
             payload = await rh_json_file.read()
             rh_json = json.loads(payload.decode("utf-8"))
             rows = extract_qual_rows(rh_json)
             imported = import_qualification_rows(db, event_id=event_id, rows=rows)
+            json_uploaded = True
             logger.info(
                 "RH qualification imported for event_id=%s, rows=%s, filename=%s",
                 event_id,
@@ -394,35 +397,60 @@ async def admin_update_event(
             )
             raise HTTPException(status_code=500, detail="Ошибка импорта RH JSON")
 
-    stmt = select(QualificationResult).where(QualificationResult.event_id == event_id)
-    qualification_rows = db.scalars(stmt).all()
     qual_updated = 0
     qual_deleted = 0
-    for q in qualification_rows:
-        prefix = f"q_{q.id}_"
-        if form.get(f"{prefix}delete"):
-            db.delete(q)
-            qual_deleted += 1
-            continue
+    q_pattern = re.compile(r"^q_(\d+)_(rank|nickname|best3|bestlap|consec|laps|attempts|delete)$")
+    q_ids_from_form = {
+        int(match.group(1))
+        for key in form.keys()
+        for match in [q_pattern.match(key)]
+        if match
+    }
 
-        nickname = (form.get(f"{prefix}nickname") or "").strip()
-        if nickname:
-            q.pilot = get_or_create_pilot(db, nickname)
+    if json_uploaded:
+        logger.info(
+            "Skipping manual qualification edits for event_id=%s because RH JSON was uploaded in same request",
+            event_id,
+        )
+    elif q_ids_from_form:
+        stmt = select(QualificationResult).where(
+            QualificationResult.event_id == event_id,
+            QualificationResult.id.in_(q_ids_from_form),
+        )
+        qualification_rows = db.scalars(stmt).all()
 
-        q.rank = parse_optional_int(form.get(f"{prefix}rank"))
-        q.best3_avg_ms = parse_optional_int(form.get(f"{prefix}best3"))
-        q.best_lap_ms = parse_optional_int(form.get(f"{prefix}bestlap"))
-        q.consecutives_count = parse_optional_int(form.get(f"{prefix}consec"))
-        q.laps_total = parse_optional_int(form.get(f"{prefix}laps"))
-        q.attempts_count = parse_optional_int(form.get(f"{prefix}attempts"))
-        qual_updated += 1
+        for q in qualification_rows:
+            prefix = f"q_{q.id}_"
+            if form.get(f"{prefix}delete"):
+                db.delete(q)
+                qual_deleted += 1
+                continue
+
+            nickname = (form.get(f"{prefix}nickname") or "").strip()
+            if nickname:
+                q.pilot = get_or_create_pilot(db, nickname)
+
+            q.rank = parse_optional_int(form.get(f"{prefix}rank"))
+            q.best3_avg_ms = parse_optional_int(form.get(f"{prefix}best3"))
+            q.best_lap_ms = parse_optional_int(form.get(f"{prefix}bestlap"))
+            q.consecutives_count = parse_optional_int(form.get(f"{prefix}consec"))
+            q.laps_total = parse_optional_int(form.get(f"{prefix}laps"))
+            q.attempts_count = parse_optional_int(form.get(f"{prefix}attempts"))
+            qual_updated += 1
 
     db.commit()
+    visible_qual_rows = db.scalar(
+        select(func.count(QualificationResult.id)).where(
+            QualificationResult.event_id == event_id,
+            QualificationResult.rank.is_not(None),
+        )
+    )
     logger.info(
-        "Admin update completed for event_id=%s, qual_updated=%s, qual_deleted=%s",
+        "Admin update completed for event_id=%s, qual_updated=%s, qual_deleted=%s, visible_qual_rows=%s",
         event_id,
         qual_updated,
         qual_deleted,
+        visible_qual_rows,
     )
 
     return RedirectResponse(

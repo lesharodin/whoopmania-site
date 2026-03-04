@@ -1,5 +1,7 @@
 # backend/app/api/routes/pilots.py
 
+import time
+
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
@@ -65,5 +67,6 @@ async def pilot_detail(
             "request": request,
             "pilot": pilot,
             "participations": participations,
+            "cache_bust": int(time.time()),
         },
     )

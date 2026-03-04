@@ -23,9 +23,9 @@
           <a href="{{ url_for('event_detail', event_id=e.id) }}" class="wm-event-card">
             <div class="wm-event-poster">
               <img
-                src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}"
+                src="{{ url_for('static', path='posters/event_' ~ e.id ~ '.jpg') }}?v={{ cache_bust }}"
                 alt="Афиша {{ e.name }}"
-                onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src='{{ url_for('static', path='posters/event_' ~ e.id ~ '.png') }}';}else{this.classList.add('wm-poster-fallback');}"
+                onerror="if(!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src='{{ url_for('static', path='posters/event_' ~ e.id ~ '.png') }}?v={{ cache_bust }}';}else{this.classList.add('wm-poster-fallback');}"
               />
               <div class="wm-poster-fallback-layer wm-hide">
                 <span class="wm-event-short">
