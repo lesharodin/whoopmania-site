@@ -1,7 +1,7 @@
 # backend/app/api/routes/admin.py
 
 import json
-import os
+import logging
 import secrets
 from datetime import date
 from typing import Any, Dict, List
@@ -62,6 +62,8 @@ maintenance_router = APIRouter(
 templates = Jinja2Templates(directory="backend/app/templates")
 templates.env.filters["format_ms"] = format_ms
 
+logger = logging.getLogger("whoopmania.admin")
+
 
 # ----------------------------------------------------------------
 # helpers
@@ -76,6 +78,62 @@ def get_or_create_pilot(db: Session, nickname: str) -> Pilot:
     db.add(p)
     db.flush()
     return p
+
+
+def parse_optional_int(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def extract_qual_rows(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if isinstance(rh_json.get("event_leaderboard"), dict):
+        rows = rh_json["event_leaderboard"].get("by_consecutives")
+        if isinstance(rows, list):
+            return rows
+
+    if isinstance(rh_json.get("leaderboard"), dict):
+        rows = rh_json["leaderboard"].get("by_consecutives")
+        if isinstance(rows, list):
+            return rows
+
+    raise ValueError(
+        "No 'by_consecutives' leaderboard found in RH JSON "
+        "(event_leaderboard/leaderboard)"
+    )
+
+
+def import_qualification_rows(
+    db: Session,
+    event_id: int,
+    rows: List[Dict[str, Any]],
+) -> int:
+    db.query(QualificationResult).filter(
+        QualificationResult.event_id == event_id
+    ).delete(synchronize_session=False)
+
+    imported = 0
+    for row in rows:
+        nickname = str(row.get("callsign") or "Unknown").strip() or "Unknown"
+        pilot = get_or_create_pilot(db, nickname)
+
+        q = QualificationResult(
+            event_id=event_id,
+            pilot_id=pilot.id,
+            rank=parse_optional_int(row.get("position")),
+            best_lap_ms=parse_optional_int(row.get("fastest_lap_raw")),
+            best3_avg_ms=parse_optional_int(row.get("consecutives_raw")),
+            laps_total=parse_optional_int(row.get("laps")),
+            attempts_count=parse_optional_int(row.get("starts")),
+            consecutives_count=parse_optional_int(row.get("consecutives_base")),
+        )
+        db.add(q)
+        imported += 1
+
+    return imported
 
 
 # ----------------------------------------------------------------
@@ -135,6 +193,27 @@ async def admin_create_event(
     db.commit()
     db.refresh(event)
 
+    if rh_json_file and rh_json_file.filename:
+        try:
+            payload = await rh_json_file.read()
+            rh_json = json.loads(payload.decode("utf-8"))
+            rows = extract_qual_rows(rh_json)
+            imported = import_qualification_rows(db, event_id=event.id, rows=rows)
+            db.commit()
+            logger.info(
+                "RH qualification imported on create for event_id=%s, rows=%s, filename=%s",
+                event.id,
+                imported,
+                rh_json_file.filename,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to import RH qualification on create for event_id=%s, filename=%s",
+                event.id,
+                rh_json_file.filename,
+            )
+            raise HTTPException(status_code=400, detail="Ошибка импорта RH JSON")
+
     return RedirectResponse(
         url=request.url_for("event_detail", event_id=event.id),
         status_code=303,
@@ -178,11 +257,77 @@ async def admin_update_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # логика обновления оставлена без изменений
     form = await request.form()
-    name = form.get("name") or event.name
-    event.name = name
+    logger.info("Admin update started for event_id=%s", event_id)
+
+    name = (form.get("name") or event.name or "").strip()
+    event.name = name or event.name
+
+    date_str = form.get("date_str")
+    if date_str:
+        try:
+            y, m, d = map(int, date_str.split("-"))
+            event.date = date(y, m, d)
+        except Exception:
+            logger.warning(
+                "Invalid date in admin update for event_id=%s: %s",
+                event_id,
+                date_str,
+            )
+            raise HTTPException(status_code=400, detail="Некорректная дата")
+
+    event.location = (form.get("location") or "").strip() or None
+    event.description = (form.get("description") or "").strip() or None
+
+    event_type = form.get("event_type")
+    if event_type:
+        try:
+            event.event_type = EventType(event_type)
+        except ValueError:
+            logger.warning(
+                "Invalid event_type in admin update for event_id=%s: %s",
+                event_id,
+                event_type,
+            )
+
+    rh_json_file = form.get("rh_json_file")
+    if isinstance(rh_json_file, UploadFile) and rh_json_file.filename:
+        try:
+            payload = await rh_json_file.read()
+            rh_json = json.loads(payload.decode("utf-8"))
+            rows = extract_qual_rows(rh_json)
+            imported = import_qualification_rows(db, event_id=event_id, rows=rows)
+            logger.info(
+                "RH qualification imported for event_id=%s, rows=%s, filename=%s",
+                event_id,
+                imported,
+                rh_json_file.filename,
+            )
+        except json.JSONDecodeError:
+            logger.warning(
+                "Invalid JSON file uploaded for event_id=%s, filename=%s",
+                event_id,
+                rh_json_file.filename,
+            )
+            raise HTTPException(status_code=400, detail="Некорректный JSON")
+        except ValueError as exc:
+            logger.warning(
+                "Unsupported RH JSON structure for event_id=%s, filename=%s: %s",
+                event_id,
+                rh_json_file.filename,
+                exc,
+            )
+            raise HTTPException(status_code=400, detail=str(exc))
+        except Exception:
+            logger.exception(
+                "Failed to import RH qualification for event_id=%s, filename=%s",
+                event_id,
+                rh_json_file.filename,
+            )
+            raise HTTPException(status_code=500, detail="Ошибка импорта RH JSON")
+
     db.commit()
+    logger.info("Admin update completed for event_id=%s", event_id)
 
     return RedirectResponse(
         url=request.url_for("admin_edit_event", event_id=event.id),

@@ -7,8 +7,11 @@ from .api.routes import pages, events, pilots   # добавим pilots
 from .api.routes import qual_import   # ← добавить импорт
 from .api.routes import admin   # ← ДОБАВЬ
 from .db import Base, engine
+from .logging_setup import configure_logging
 
 from . import models  # noqa: F401  # важно, чтобы модели подхватились
+
+configure_logging()
 
 app = FastAPI(root_path="/whoopmania")
 

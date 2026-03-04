@@ -72,6 +72,7 @@ async def import_rh_qualification(event_id: int, rh_json: Dict[str, Any], db: Se
             consecutives_count=consecutives_count,
         )
         db.add(q)
+        imported += 1
 
 
 
