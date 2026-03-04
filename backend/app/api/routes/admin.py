@@ -247,6 +247,20 @@ def _first_non_none(data: Dict[str, Any], *keys: str) -> Any:
     return None
 
 
+def _place_to_round_points(place: int | None) -> int | None:
+    if place is None:
+        return None
+    if place == 1:
+        return 3
+    if place == 2:
+        return 2
+    if place == 3:
+        return 1
+    if place == 4:
+        return 0
+    return None
+
+
 def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     heats: List[Dict[str, Any]] | None = None
     if isinstance(rh_json.get("heats"), list):
@@ -280,6 +294,38 @@ def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
         if not rows:
             continue
 
+        # Try to pull per-round places from RH rounds leaderboard.
+        round_points_by_pilot: Dict[str, List[int | None]] = {}
+        rounds = heat.get("rounds")
+        if isinstance(rounds, list):
+            round_slot = 0
+            for round_payload in rounds:
+                if round_slot >= 5:
+                    break
+                if not isinstance(round_payload, dict):
+                    continue
+                round_rows = _extract_heat_rows(round_payload)
+                round_map: Dict[str, int] = {}
+                for round_row in round_rows:
+                    if not isinstance(round_row, dict):
+                        continue
+                    round_nickname = _first_non_none(round_row, "callsign", "pilot", "pilot_name", "name")
+                    if not round_nickname:
+                        continue
+                    place = parse_optional_int(_first_non_none(round_row, "position", "rank", "place"))
+                    pts = _place_to_round_points(place)
+                    if pts is None:
+                        continue
+                    nick_key = str(round_nickname).strip() or "Unknown"
+                    round_map[nick_key] = pts
+                if not round_map:
+                    continue
+                for nick_key, pts in round_map.items():
+                    if nick_key not in round_points_by_pilot:
+                        round_points_by_pilot[nick_key] = [None, None, None, None, None]
+                    round_points_by_pilot[nick_key][round_slot] = pts
+                round_slot += 1
+
         participants: List[Dict[str, Any]] = []
         for row in rows:
             if not isinstance(row, dict):
@@ -295,21 +341,32 @@ def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
             p4 = parse_optional_int(_first_non_none(row, "points_r4", "r4"))
             p5 = parse_optional_int(_first_non_none(row, "points_r5", "r5"))
             final_position = parse_optional_int(_first_non_none(row, "position", "rank", "place"))
-            total_points = parse_optional_float(_first_non_none(row, "total_points", "points_total", "points"))
+            total_points = parse_optional_float(_first_non_none(row, "total_points", "points_total"))
+            round_points = round_points_by_pilot.get(str(nickname).strip() or "Unknown", [None, None, None, None, None])
 
             participants.append(
                 {
                     "nickname": str(nickname).strip() or "Unknown",
                     "slot_index": parse_optional_int(row.get("slot")) or (len(participants) + 1),
-                    "points_r1": p1 if p1 is not None else (points[0] if len(points) > 0 else None),
-                    "points_r2": p2 if p2 is not None else (points[1] if len(points) > 1 else None),
-                    "points_r3": p3 if p3 is not None else (points[2] if len(points) > 2 else None),
-                    "points_r4": p4 if p4 is not None else (points[3] if len(points) > 3 else None),
-                    "points_r5": p5 if p5 is not None else (points[4] if len(points) > 4 else None),
+                    "points_r1": p1 if p1 is not None else (points[0] if len(points) > 0 else round_points[0]),
+                    "points_r2": p2 if p2 is not None else (points[1] if len(points) > 1 else round_points[1]),
+                    "points_r3": p3 if p3 is not None else (points[2] if len(points) > 2 else round_points[2]),
+                    "points_r4": p4 if p4 is not None else (points[3] if len(points) > 3 else round_points[3]),
+                    "points_r5": p5 if p5 is not None else (points[4] if len(points) > 4 else round_points[4]),
                     "total_points": total_points,
                     "final_position": final_position,
                 }
             )
+
+        for p in participants:
+            per_round = [p.get("points_r1"), p.get("points_r2"), p.get("points_r3"), p.get("points_r4"), p.get("points_r5")]
+            numeric = [x for x in per_round if isinstance(x, (int, float))]
+            computed_total = float(sum(numeric)) if numeric else None
+            existing_total = p.get("total_points")
+            if existing_total is None:
+                p["total_points"] = computed_total
+            elif existing_total == 0 and computed_total not in (None, 0):
+                p["total_points"] = computed_total
 
         # Some RH exports omit rank/place fields for non-final heats; keep table usable.
         used_positions = {p["final_position"] for p in participants if p.get("final_position") is not None}
