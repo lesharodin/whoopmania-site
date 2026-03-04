@@ -244,10 +244,16 @@ def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     heats: List[Dict[str, Any]] | None = None
     if isinstance(rh_json.get("heats"), list):
         heats = rh_json["heats"]
+    elif isinstance(rh_json.get("heats"), dict):
+        heats = [x for x in rh_json["heats"].values() if isinstance(x, dict)]
     elif isinstance(rh_json.get("results"), dict) and isinstance(rh_json["results"].get("heats"), list):
         heats = rh_json["results"]["heats"]
+    elif isinstance(rh_json.get("results"), dict) and isinstance(rh_json["results"].get("heats"), dict):
+        heats = [x for x in rh_json["results"]["heats"].values() if isinstance(x, dict)]
     elif isinstance(rh_json.get("event"), dict) and isinstance(rh_json["event"].get("heats"), list):
         heats = rh_json["event"]["heats"]
+    elif isinstance(rh_json.get("event"), dict) and isinstance(rh_json["event"].get("heats"), dict):
+        heats = [x for x in rh_json["event"]["heats"].values() if isinstance(x, dict)]
 
     if not heats:
         raise ValueError("No heats list found in RH finals JSON")
