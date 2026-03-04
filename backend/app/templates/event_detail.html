@@ -166,7 +166,7 @@
                     <td>{{ place_from_points(r.points_r5, r.total_points) }}</td>
 
                     <td>{{ r.total_points | float_clean }}</td>
-                    <td>{{ r.final_position or "—" }}</td>
+                    <td>{{ r.final_position if r.final_position is not none else "—" }}</td>
                   </tr>
                 {% endfor %}
 
@@ -211,7 +211,7 @@
                     <td>{{ place_from_points(r.points_r3, r.total_points) }}</td>
 
                     <td>{{ r.total_points | float_clean }}</td>
-                    <td>{{ r.final_position or "—" }}</td>
+                    <td>{{ r.final_position if r.final_position is not none else "—" }}</td>
                   </tr>
                 {% endfor %}
 

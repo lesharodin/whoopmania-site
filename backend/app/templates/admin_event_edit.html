@@ -333,7 +333,7 @@
                         <input
                           type="number"
                           name="br_{{ r.id }}_pos"
-                          value="{{ r.final_position or '' }}"
+                          value="{{ r.final_position if r.final_position is not none else '' }}"
                           class="wm-input-tiny"
                           min="1"
                           max="4"

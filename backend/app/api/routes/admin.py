@@ -240,6 +240,13 @@ def _extract_points_list(row: Dict[str, Any]) -> List[int | None]:
     return []
 
 
+def _first_non_none(data: Dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in data and data[key] is not None:
+            return data[key]
+    return None
+
+
 def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
     heats: List[Dict[str, Any]] | None = None
     if isinstance(rh_json.get("heats"), list):
@@ -278,18 +285,17 @@ def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
             if not isinstance(row, dict):
                 continue
             nickname = (
-                row.get("callsign")
-                or row.get("pilot")
-                or row.get("pilot_name")
-                or row.get("name")
+                _first_non_none(row, "callsign", "pilot", "pilot_name", "name")
                 or "Unknown"
             )
             points = _extract_points_list(row)
-            p1 = parse_optional_int(row.get("points_r1") or row.get("r1"))
-            p2 = parse_optional_int(row.get("points_r2") or row.get("r2"))
-            p3 = parse_optional_int(row.get("points_r3") or row.get("r3"))
-            p4 = parse_optional_int(row.get("points_r4") or row.get("r4"))
-            p5 = parse_optional_int(row.get("points_r5") or row.get("r5"))
+            p1 = parse_optional_int(_first_non_none(row, "points_r1", "r1"))
+            p2 = parse_optional_int(_first_non_none(row, "points_r2", "r2"))
+            p3 = parse_optional_int(_first_non_none(row, "points_r3", "r3"))
+            p4 = parse_optional_int(_first_non_none(row, "points_r4", "r4"))
+            p5 = parse_optional_int(_first_non_none(row, "points_r5", "r5"))
+            final_position = parse_optional_int(_first_non_none(row, "position", "rank", "place"))
+            total_points = parse_optional_float(_first_non_none(row, "total_points", "points_total", "points"))
 
             participants.append(
                 {
@@ -300,12 +306,20 @@ def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "points_r3": p3 if p3 is not None else (points[2] if len(points) > 2 else None),
                     "points_r4": p4 if p4 is not None else (points[3] if len(points) > 3 else None),
                     "points_r5": p5 if p5 is not None else (points[4] if len(points) > 4 else None),
-                    "total_points": parse_optional_float(row.get("total_points") or row.get("points_total")),
-                    "final_position": parse_optional_int(
-                        row.get("position") or row.get("rank") or row.get("place")
-                    ),
+                    "total_points": total_points,
+                    "final_position": final_position,
                 }
             )
+
+        # Some RH exports omit rank/place fields for non-final heats; keep table usable.
+        used_positions = {p["final_position"] for p in participants if p.get("final_position") is not None}
+        next_pos = 1
+        for p in participants:
+            if p.get("final_position") is None:
+                while next_pos in used_positions:
+                    next_pos += 1
+                p["final_position"] = next_pos
+                used_positions.add(next_pos)
 
         if participants:
             race_payloads.append(
