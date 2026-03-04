@@ -66,6 +66,23 @@ templates.env.filters["format_ms"] = format_ms
 
 logger = logging.getLogger("whoopmania.admin")
 
+BRACKET_CONFIG = [
+    (1, "upper_1_16", "1/16"),
+    (2, "upper_1_16", "1/16"),
+    (3, "upper_1_16", "1/16"),
+    (4, "upper_1_16", "1/16"),
+    (5, "lower_1_16", "1/16"),
+    (6, "upper_1_8", "1/8"),
+    (7, "lower_1_16", "1/16"),
+    (8, "upper_1_8", "1/8"),
+    (9, "lower_1_8", "1/8"),
+    (10, "lower_1_8", "1/8"),
+    (11, "upper_1_4", "1/4"),
+    (12, "lower_1_4", "1/4"),
+    (13, "semi", "Полуфинал"),
+    (14, "final", "Финал"),
+]
+
 
 # ----------------------------------------------------------------
 # helpers
@@ -87,6 +104,15 @@ def parse_optional_int(value: Any) -> int | None:
         return None
     try:
         return int(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def parse_optional_float(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
     except (ValueError, TypeError):
         return None
 
@@ -157,7 +183,183 @@ async def save_event_poster(event_id: int, poster_file: UploadFile) -> str:
     target = posters_dir / f"event_{event_id}{ext}"
     payload = await poster_file.read()
     target.write_bytes(payload)
+    logger.info(
+        "Poster file written for event_id=%s: path=%s bytes=%s",
+        event_id,
+        target,
+        len(payload),
+    )
     return target.name
+
+
+def ensure_event_bracket(db: Session, event_id: int) -> None:
+    existing = db.scalar(
+        select(BracketRace.id).where(BracketRace.event_id == event_id).limit(1)
+    )
+    if existing:
+        return
+
+    for number, stage, short_label in BRACKET_CONFIG:
+        side = "final" if stage == "final" else ("upper" if "upper" in stage else "lower")
+        db.add(
+            BracketRace(
+                event_id=event_id,
+                number=number,
+                name=f"Гонка {number}",
+                stage=stage,
+                short_label=short_label,
+                bracket_side=side,
+            )
+        )
+
+    db.flush()
+
+
+def _extract_heat_rows(heat: Dict[str, Any]) -> List[Dict[str, Any]]:
+    candidate = (
+        heat.get("results")
+        or heat.get("entries")
+        or heat.get("leaderboard")
+        or heat.get("by_race_time")
+        or heat.get("pilots")
+    )
+    if isinstance(candidate, list):
+        return candidate
+    if isinstance(candidate, dict):
+        for key in ("by_race_time", "meta", "rows", "results", "entries"):
+            val = candidate.get(key)
+            if isinstance(val, list):
+                return val
+    return []
+
+
+def _extract_points_list(row: Dict[str, Any]) -> List[int | None]:
+    points = row.get("round_points") or row.get("points")
+    if isinstance(points, list):
+        return [parse_optional_int(x) for x in points[:5]]
+    return []
+
+
+def extract_finals_races(rh_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+    heats: List[Dict[str, Any]] | None = None
+    if isinstance(rh_json.get("heats"), list):
+        heats = rh_json["heats"]
+    elif isinstance(rh_json.get("results"), dict) and isinstance(rh_json["results"].get("heats"), list):
+        heats = rh_json["results"]["heats"]
+    elif isinstance(rh_json.get("event"), dict) and isinstance(rh_json["event"].get("heats"), list):
+        heats = rh_json["event"]["heats"]
+
+    if not heats:
+        raise ValueError("No heats list found in RH finals JSON")
+
+    race_payloads: List[Dict[str, Any]] = []
+    for index, heat in enumerate(heats, start=1):
+        if not isinstance(heat, dict):
+            continue
+
+        parsed_number = parse_optional_int(heat.get("number") or heat.get("heat_number"))
+        if parsed_number is None:
+            name = str(heat.get("name") or heat.get("displayname") or "")
+            found = re.search(r"\d+", name)
+            parsed_number = int(found.group(0)) if found else index
+
+        rows = _extract_heat_rows(heat)
+        if not rows:
+            continue
+
+        participants: List[Dict[str, Any]] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            nickname = (
+                row.get("callsign")
+                or row.get("pilot")
+                or row.get("pilot_name")
+                or row.get("name")
+                or "Unknown"
+            )
+            points = _extract_points_list(row)
+            p1 = parse_optional_int(row.get("points_r1") or row.get("r1"))
+            p2 = parse_optional_int(row.get("points_r2") or row.get("r2"))
+            p3 = parse_optional_int(row.get("points_r3") or row.get("r3"))
+            p4 = parse_optional_int(row.get("points_r4") or row.get("r4"))
+            p5 = parse_optional_int(row.get("points_r5") or row.get("r5"))
+
+            participants.append(
+                {
+                    "nickname": str(nickname).strip() or "Unknown",
+                    "slot_index": parse_optional_int(row.get("slot")) or (len(participants) + 1),
+                    "points_r1": p1 if p1 is not None else (points[0] if len(points) > 0 else None),
+                    "points_r2": p2 if p2 is not None else (points[1] if len(points) > 1 else None),
+                    "points_r3": p3 if p3 is not None else (points[2] if len(points) > 2 else None),
+                    "points_r4": p4 if p4 is not None else (points[3] if len(points) > 3 else None),
+                    "points_r5": p5 if p5 is not None else (points[4] if len(points) > 4 else None),
+                    "total_points": parse_optional_float(row.get("total_points") or row.get("points_total")),
+                    "final_position": parse_optional_int(
+                        row.get("position") or row.get("rank") or row.get("place")
+                    ),
+                }
+            )
+
+        if participants:
+            race_payloads.append(
+                {
+                    "number": parsed_number,
+                    "participants": participants,
+                }
+            )
+
+    race_payloads.sort(key=lambda x: x["number"])
+    for i, payload in enumerate(race_payloads, start=1):
+        number = payload["number"]
+        if number < 1 or number > 14:
+            payload["number"] = i
+
+    filtered = [p for p in race_payloads if 1 <= p["number"] <= 14]
+    if not filtered:
+        raise ValueError("No race rows extracted from RH finals JSON")
+    return filtered
+
+
+def import_finals_rows(db: Session, event_id: int, races_payload: List[Dict[str, Any]]) -> tuple[int, int]:
+    ensure_event_bracket(db, event_id)
+
+    races = db.scalars(
+        select(BracketRace).where(BracketRace.event_id == event_id)
+    ).all()
+    race_by_number = {r.number: r for r in races}
+    race_ids = [r.id for r in races]
+    if race_ids:
+        db.query(BracketRaceResult).filter(
+            BracketRaceResult.bracket_race_id.in_(race_ids)
+        ).delete(synchronize_session=False)
+
+    imported_races = 0
+    imported_results = 0
+    for race_payload in races_payload:
+        race = race_by_number.get(race_payload["number"])
+        if not race:
+            continue
+        imported_races += 1
+        for participant in race_payload["participants"][:4]:
+            pilot = get_or_create_pilot(db, participant["nickname"])
+            db.add(
+                BracketRaceResult(
+                    bracket_race_id=race.id,
+                    pilot_id=pilot.id,
+                    slot_index=parse_optional_int(participant.get("slot_index")) or (imported_results + 1),
+                    points_r1=parse_optional_int(participant.get("points_r1")),
+                    points_r2=parse_optional_int(participant.get("points_r2")),
+                    points_r3=parse_optional_int(participant.get("points_r3")),
+                    points_r4=parse_optional_int(participant.get("points_r4")),
+                    points_r5=parse_optional_int(participant.get("points_r5")),
+                    total_points=parse_optional_float(participant.get("total_points")),
+                    final_position=parse_optional_int(participant.get("final_position")),
+                )
+            )
+            imported_results += 1
+
+    return imported_races, imported_results
 
 
 # ----------------------------------------------------------------
@@ -397,6 +599,49 @@ async def admin_update_event(
             )
             raise HTTPException(status_code=500, detail="Ошибка импорта RH JSON")
 
+    rh_finals_file = form.get("rh_finals_file")
+    finals_uploaded = False
+    if rh_finals_file is not None and getattr(rh_finals_file, "filename", ""):
+        try:
+            payload = await rh_finals_file.read()
+            finals_json = json.loads(payload.decode("utf-8"))
+            races_payload = extract_finals_races(finals_json)
+            imported_races, imported_results = import_finals_rows(
+                db,
+                event_id=event_id,
+                races_payload=races_payload,
+            )
+            finals_uploaded = True
+            logger.info(
+                "RH finals imported for event_id=%s, races=%s, results=%s, filename=%s",
+                event_id,
+                imported_races,
+                imported_results,
+                rh_finals_file.filename,
+            )
+        except json.JSONDecodeError:
+            logger.warning(
+                "Invalid finals JSON file uploaded for event_id=%s, filename=%s",
+                event_id,
+                rh_finals_file.filename,
+            )
+            raise HTTPException(status_code=400, detail="Некорректный JSON финалов")
+        except ValueError as exc:
+            logger.warning(
+                "Unsupported finals JSON structure for event_id=%s, filename=%s: %s",
+                event_id,
+                rh_finals_file.filename,
+                exc,
+            )
+            raise HTTPException(status_code=400, detail=str(exc))
+        except Exception:
+            logger.exception(
+                "Failed to import RH finals for event_id=%s, filename=%s",
+                event_id,
+                rh_finals_file.filename,
+            )
+            raise HTTPException(status_code=500, detail="Ошибка импорта JSON финалов")
+
     qual_updated = 0
     qual_deleted = 0
     q_pattern = re.compile(r"^q_(\d+)_(rank|nickname|best3|bestlap|consec|laps|attempts|delete)$")
@@ -438,6 +683,47 @@ async def admin_update_event(
             q.attempts_count = parse_optional_int(form.get(f"{prefix}attempts"))
             qual_updated += 1
 
+    br_updated = 0
+    br_pattern = re.compile(r"^br_(\d+)_(nickname|r1|r2|r3|r4|r5|total|pos|slot)$")
+    br_ids_from_form = {
+        int(match.group(1))
+        for key in form.keys()
+        for match in [br_pattern.match(key)]
+        if match
+    }
+
+    if finals_uploaded:
+        logger.info(
+            "Skipping manual bracket edits for event_id=%s because finals JSON was uploaded in same request",
+            event_id,
+        )
+    elif br_ids_from_form:
+        bracket_rows = db.scalars(
+            select(BracketRaceResult)
+            .join(BracketRace, BracketRace.id == BracketRaceResult.bracket_race_id)
+            .where(
+                BracketRaceResult.id.in_(br_ids_from_form),
+                BracketRace.event_id == event_id,
+            )
+        ).all()
+        for row in bracket_rows:
+            prefix = f"br_{row.id}_"
+            nickname = (form.get(f"{prefix}nickname") or "").strip()
+            if nickname:
+                row.pilot = get_or_create_pilot(db, nickname)
+            elif f"{prefix}nickname" in form:
+                row.pilot_id = None
+
+            row.points_r1 = parse_optional_int(form.get(f"{prefix}r1"))
+            row.points_r2 = parse_optional_int(form.get(f"{prefix}r2"))
+            row.points_r3 = parse_optional_int(form.get(f"{prefix}r3"))
+            row.points_r4 = parse_optional_int(form.get(f"{prefix}r4"))
+            row.points_r5 = parse_optional_int(form.get(f"{prefix}r5"))
+            row.total_points = parse_optional_float(form.get(f"{prefix}total"))
+            row.final_position = parse_optional_int(form.get(f"{prefix}pos"))
+            row.slot_index = parse_optional_int(form.get(f"{prefix}slot")) or row.slot_index
+            br_updated += 1
+
     db.commit()
     visible_qual_rows = db.scalar(
         select(func.count(QualificationResult.id)).where(
@@ -446,10 +732,11 @@ async def admin_update_event(
         )
     )
     logger.info(
-        "Admin update completed for event_id=%s, qual_updated=%s, qual_deleted=%s, visible_qual_rows=%s",
+        "Admin update completed for event_id=%s, qual_updated=%s, qual_deleted=%s, br_updated=%s, visible_qual_rows=%s",
         event_id,
         qual_updated,
         qual_deleted,
+        br_updated,
         visible_qual_rows,
     )
 
@@ -482,24 +769,7 @@ async def admin_create_bracket(
             status_code=303,
         )
 
-    config = [
-        (1, "upper_1_16", "1/16"),
-        (2, "upper_1_16", "1/16"),
-        (3, "upper_1_16", "1/16"),
-        (4, "upper_1_16", "1/16"),
-        (5, "lower_1_16", "1/16"),
-        (6, "upper_1_8", "1/8"),
-        (7, "lower_1_16", "1/16"),
-        (8, "upper_1_8", "1/8"),
-        (9, "lower_1_8", "1/8"),
-        (10, "lower_1_8", "1/8"),
-        (11, "upper_1_4", "1/4"),
-        (12, "lower_1_4", "1/4"),
-        (13, "semi", "Полуфинал"),
-        (14, "final", "Финал"),
-    ]
-
-    for number, stage, short_label in config:
+    for number, stage, short_label in BRACKET_CONFIG:
         side = "final" if stage == "final" else ("upper" if "upper" in stage else "lower")
         race = BracketRace(
             event_id=event_id,
