@@ -8,22 +8,38 @@
       rel="stylesheet"
       href="{{ url_for('static', path='style.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', path='polish.css') }}"
+    />
   </head>
   <body>
     <div class="wm-app">
       <header class="wm-header">
         <div class="wm-header-inner wm-container">
           <div class="wm-logo">
-            <!-- ❌ было "/" -->
-            <a href="{{ url_for('index') }}">WhoopMania</a>
-            <span class="wm-logo-tagline">Лучшие гонки на вупах</span>
+            <span class="wm-logo-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <circle cx="7" cy="7" r="4"></circle>
+                <circle cx="17" cy="7" r="4"></circle>
+                <circle cx="7" cy="17" r="4"></circle>
+                <circle cx="17" cy="17" r="4"></circle>
+                <path d="M10 7h4M7 10v4M17 10v4M10 17h4"></path>
+              </svg>
+            </span>
+            <span class="wm-logo-copy">
+              <a href="{{ url_for('index') }}">WhoopMania</a>
+              <span class="wm-logo-tagline">Гонки на tiny whoop</span>
+            </span>
           </div>
-          <nav class="wm-nav">
-            <!-- ❌ было "/events" -->
+          <button class="wm-menu-button" type="button" aria-expanded="false" aria-controls="wm-nav" aria-label="Открыть меню">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 7h16M4 12h16M4 17h16"></path>
+            </svg>
+          </button>
+          <nav class="wm-nav" id="wm-nav">
             <a href="{{ url_for('events') }}">События</a>
-            <!-- ❌ было "/pilots" -->
             <a href="{{ url_for('pilots') }}">Пилоты</a>
-            <!-- <a href="trainings">Тренировки</a> -->
           </nav>
         </div>
       </header>
@@ -43,5 +59,17 @@
         </div>
       </footer>
     </div>
+    <script>
+      (() => {
+        const button = document.querySelector(".wm-menu-button");
+        const nav = document.querySelector(".wm-nav");
+        if (!button || !nav) return;
+        button.addEventListener("click", () => {
+          const open = nav.classList.toggle("is-open");
+          button.setAttribute("aria-expanded", String(open));
+          button.setAttribute("aria-label", open ? "Закрыть меню" : "Открыть меню");
+        });
+      })();
+    </script>
   </body>
 </html>

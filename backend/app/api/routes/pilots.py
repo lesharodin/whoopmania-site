@@ -11,6 +11,7 @@ from ...db import get_db
 from ...models.pilot import Pilot
 from ...models.event import Event
 from ...models.qualification import QualificationResult
+from ...models.bracket import BracketRace, BracketRaceResult
 from ...utils.formatting import format_ms
 
 router = APIRouter(prefix="/pilots", tags=["pilots"])
@@ -61,12 +62,39 @@ async def pilot_detail(
             }
         )
 
+    awards_stmt = (
+        select(BracketRaceResult, BracketRace, Event)
+        .join(BracketRace, BracketRaceResult.bracket_race_id == BracketRace.id)
+        .join(Event, BracketRace.event_id == Event.id)
+        .where(
+            BracketRaceResult.pilot_id == pilot_id,
+            BracketRace.bracket_side == "final",
+            BracketRaceResult.final_position.is_not(None),
+            BracketRaceResult.final_position <= 4,
+        )
+        .order_by(Event.date.desc())
+    )
+    final_results = [result for result, _, _ in db.execute(awards_stmt).all()]
+    place_counts = [
+        {
+            "place": place,
+            "count": count,
+        }
+        for place in range(1, 5)
+        if (count := sum(result.final_position == place for result in final_results))
+    ]
+
+    ranked_results = [item["qual"] for item in participations if item["qual"].rank]
+    qualification_wins = sum(q.rank == 1 for q in ranked_results)
+
     return templates.TemplateResponse(
         "pilot_detail.html",
         {
             "request": request,
             "pilot": pilot,
             "participations": participations,
+            "place_counts": place_counts,
+            "qualification_wins": qualification_wins,
             "cache_bust": int(time.time()),
         },
     )

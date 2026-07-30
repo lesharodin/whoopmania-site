@@ -3,19 +3,58 @@
 {% block title %}{{ pilot.nickname }} · Пилот · WhoopMania{% endblock %}
 
 {% block content %}
-  <div class="wm-card">
-    <h2>{{ pilot.nickname }}</h2>
-    <p>
-      Участник серии WhoopMania.
-      {% if participations and participations|length > 0 %}
-        Участвовал в {{ participations|length }} событии(ях).
-      {% endif %}
-    </p>
-  </div>
+  <section class="wm-pilot-head">
+    <div class="wm-pilot-avatar" aria-hidden="true">{{ pilot.nickname[:1] }}</div>
+    <div>
+      <p class="wm-eyebrow">Пилот WhoopMania</p>
+      <h1>{{ pilot.nickname }}</h1>
+      <p>
+        Участник серии WhoopMania.
+        {% if participations and participations|length > 0 %}
+          Этапов в истории выступлений: {{ participations|length }}.
+        {% endif %}
+      </p>
+    </div>
+  </section>
+
+  {% if place_counts or qualification_wins %}
+    <section class="wm-achievements" data-od-id="pilot-achievements">
+      <div class="wm-section-head">
+        <div>
+          <p class="wm-eyebrow">Награды пилота</p>
+          <h2>Подиумы</h2>
+        </div>
+        <p>Счётчик итоговых позиций в финалах.</p>
+      </div>
+
+      <div class="wm-podium-board">
+        <div class="wm-podium-list" aria-label="Финальные позиции пилота">
+          {% for item in place_counts %}
+          <article class="wm-podium-medal" aria-label="{{ item.place }} место — {{ item.count }} раз">
+            <span class="wm-podium-position">{{ item.place }}</span>
+            <strong class="wm-podium-count">×{{ item.count }}</strong>
+          </article>
+          {% endfor %}
+        </div>
+        {% if qualification_wins %}
+          <aside class="wm-qualification-award">
+            <span>Победы в квалификации</span>
+            <strong>×{{ qualification_wins }}</strong>
+          </aside>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
 
   {% if participations and participations|length > 0 %}
-    <div class="wm-card">
-      <h3>Участвовал в событиях</h3>
+    <section class="wm-section">
+      <div class="wm-section-head">
+        <div>
+          <p class="wm-eyebrow">История выступлений</p>
+          <h2>Выступления</h2>
+        </div>
+        <p>Этапы, место в квалификации и лучшее время трёх кругов.</p>
+      </div>
       <div class="wm-events-strip">
         {% for item in participations %}
           {% set e = item.event %}
@@ -53,7 +92,7 @@
           </a>
         {% endfor %}
       </div>
-    </div>
+    </section>
   {% else %}
     <div class="wm-card">
       <p>Данных об участии пилота в гонках пока нет.</p>

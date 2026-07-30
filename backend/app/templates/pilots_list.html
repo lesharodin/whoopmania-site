@@ -3,10 +3,16 @@
 {% block title %}Пилоты · WhoopMania{% endblock %}
 
 {% block content %}
-  <div class="wm-card">
-    <h2>Пилоты</h2>
+  <div class="wm-page-head">
+    <div>
+      <p class="wm-eyebrow">Участники лиги</p>
+      <h1>Пилоты</h1>
+    </div>
+    <p>Позывные участников WhoopMania и история выступлений на этапах серии.</p>
+  </div>
+  <div>
     {% if pilots %}
-      <ul>
+      <ul class="wm-pilot-list">
         {% for p in pilots %}
           <li>
             <a href="{{ url_for('pilot_detail', pilot_id=p.id) }}">{{ p.nickname }}</a>
