@@ -3,24 +3,44 @@
 {% block title %}WhoopMania · Главная{% endblock %}
 
 {% block content %}
-  <div class="wm-card">
-    <h2>Последние события</h2>
-    <p>Прошедшие гонки WhoopMania</p>
+  <section class="wm-hero">
+    <div class="wm-hero-copy">
+      <p class="wm-eyebrow">Сезон 1 · Москва</p>
+      <h1>Гонка, которую ты ждёшь.</h1>
+      <p>WhoopMania — серия клубных гонок на микродронах. Квалификация, double elimination и результаты каждого этапа в одном месте.</p>
+      <a class="wm-hero-link" href="{{ url_for('events') }}">Смотреть все этапы</a>
+    </div>
+    {% if events %}
+      {% set featured = events[0] %}
+      <a class="wm-featured-event" href="{{ url_for('event_detail', event_id=featured.id) }}">
+        <img
+          src="{{ url_for('event_poster', event_id=featured.id) }}?v={{ cache_bust }}"
+          alt="Афиша {{ featured.name }}"
+        />
+        <span class="wm-featured-overlay">
+          <span>
+            <strong>{{ featured.name }}</strong>
+            <span>{{ featured.date }}{% if featured.location %} · {{ featured.location }}{% endif %}</span>
+          </span>
+          <span class="wm-featured-index">Последний этап →</span>
+        </span>
+      </a>
+    {% endif %}
+  </section>
 
+  <section class="wm-section">
+    <div class="wm-section-head">
+      <div>
+        <p class="wm-eyebrow">Архив сезона</p>
+        <h2>Последние события</h2>
+      </div>
+      <p>Афиши, квалификация и турнирные сетки прошедших гонок WhoopMania.</p>
+    </div>
     {% if events %}
       <div class="wm-events-strip">
         {% for e in events %}
           <a href="{{ url_for('event_detail', event_id=e.id) }}" class="wm-event-card">
             <div class="wm-event-poster">
-              <!--
-                По умолчанию постер берём по пути:
-                /static/posters/event_{{ e.id }}.jpg
-
-                Ты можешь положить свои афиши сюда:
-                backend/app/static/posters/event_1.jpg
-                backend/app/static/posters/event_2.jpg
-                и т.д.
-              -->
               <img
                 src="{{ url_for('event_poster', event_id=e.id) }}?v={{ cache_bust }}"
                 alt="Афиша {{ e.name }}"
@@ -45,5 +65,5 @@
     {% else %}
       <p>Пока нет событий.</p>
     {% endif %}
-  </div>
+  </section>
 {% endblock %}

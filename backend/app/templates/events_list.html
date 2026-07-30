@@ -3,9 +3,13 @@
 {% block title %}Все события · WhoopMania{% endblock %}
 
 {% block content %}
-  <div class="wm-card">
-    <h2>Все события</h2>
-    <p>Гонки серии WhoopMania и связанные мероприятия.</p>
+  <div class="wm-page-head">
+    <div>
+      <p class="wm-eyebrow">Сезон за сезоном</p>
+      <h1>Все события</h1>
+    </div>
+    <p>Гонки серии WhoopMania, квалификации и итоговые турнирные сетки.</p>
+  </div>
 
     {% if events %}
       <div class="wm-events-grid">
@@ -42,5 +46,4 @@
     {% else %}
       <p>Пока нет событий.</p>
     {% endif %}
-  </div>
 {% endblock %}

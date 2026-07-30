@@ -4,19 +4,31 @@
 
 {% block content %}
 
-<h2>{{ event.name }}</h2>
-<p><strong>Дата:</strong> {{ event.date }}</p>
-<p><strong>Тип:</strong> {{ event.event_type }}</p>
-{% if event.location %}
-  <p><strong>Локация:</strong> {{ event.location }}</p>
-{% endif %}
-{% if event.description %}
-  <p>{{ event.description }}</p>
-{% endif %}
+<section class="wm-event-head">
+  <div>
+    <p class="wm-eyebrow">Этап сезона</p>
+    <h1>{{ event.name }}</h1>
+    {% if event.description %}
+      <p class="wm-event-lead">{{ event.description }}</p>
+    {% endif %}
+  </div>
+  <dl class="wm-event-facts">
+    <div><dt>Дата</dt><dd>{{ event.date }}</dd></div>
+    <div><dt>Формат</dt><dd>{{ event.event_type }}</dd></div>
+    {% if event.location %}
+      <div><dt>Локация</dt><dd>{{ event.location }}</dd></div>
+    {% endif %}
+  </dl>
+</section>
 
-<hr />
-
-<h3>Квалификация</h3>
+<section class="wm-results-section">
+  <div class="wm-section-head">
+    <div>
+      <p class="wm-eyebrow">Результаты этапа</p>
+      <h2>Квалификация</h2>
+    </div>
+    <p>Нажмите на заголовок столбца, чтобы изменить порядок результатов.</p>
+  </div>
 
 {% if qualification and qualification|length > 0 %}
   <table id="qualification-table" border="1" cellpadding="4" cellspacing="0">
@@ -70,6 +82,7 @@
 {% else %}
   <p>Квалификация пока не загружена.</p>
 {% endif %}
+</section>
 
 {# ============================================================
    ТУРИРНАЯ СЕТКА (Double Elimination) — Full Width Layout
@@ -77,7 +90,7 @@
 </div>
 <div class="wm-bracket-section">
   <div class="wm-bracket-inner-header">
-    <h3>Сетка топ-16 (Double Elimination)</h3>
+    <h3>Групповые вылеты</h3>
   </div>
 
 {% if event.bracket_races and event.bracket_races|length > 0 %}
@@ -238,25 +251,6 @@
 {# ============================================================
    JS: СОРТИРОВКА ТАБЛИЦЫ КВАЛИФИКАЦИИ
    ============================================================ #}
-
-<style>
-  th {
-    cursor: pointer;
-    position: relative;
-    padding-right: 16px;
-  }
-  th.active-sort {
-    background: #f0f0f0;
-  }
-  th .arrow {
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 12px;
-    opacity: 0.7;
-  }
-</style>
 
 <script>
 (function(){
