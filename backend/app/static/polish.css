@@ -229,6 +229,8 @@ h3 {
 
 .wm-featured-event {
   position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 420px;
   overflow: hidden;
   border: 1px solid var(--wm-border-strong);
@@ -267,19 +269,14 @@ h3 {
 }
 
 .wm-featured-overlay {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
+  position: static;
   display: flex;
   justify-content: space-between;
   gap: 20px;
   align-items: end;
   padding: 16px;
-  border: 1px solid var(--wm-border-strong);
-  border-radius: var(--wm-radius-md);
+  border-top: 1px solid var(--wm-border-strong);
   background: #0b0d13;
-  box-shadow: 0 12px 30px #05060a;
 }
 
 .wm-featured-overlay strong {
