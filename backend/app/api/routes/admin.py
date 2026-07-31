@@ -443,7 +443,8 @@ def import_finals_rows(db: Session, event_id: int, races_payload: List[Dict[str,
 # views
 # ----------------------------------------------------------------
 
-@router.get("/", include_in_schema=False, name="admin_index")
+@router.get("/", include_in_schema=False, name="admin_index_slash")
+@router.get("", include_in_schema=False, name="admin_index")
 async def admin_index(request: Request, db: Session = Depends(get_db)):
     stmt = select(Event).order_by(Event.date.desc())
     events = db.scalars(stmt).all()
