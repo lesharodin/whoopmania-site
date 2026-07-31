@@ -244,6 +244,17 @@ h3 {
   object-fit: cover;
 }
 
+@media (min-width: 801px) {
+  .wm-featured-event {
+    height: clamp(360px, 52vh, 480px);
+    min-height: 0;
+  }
+
+  .wm-featured-event img {
+    min-height: 0;
+  }
+}
+
 .wm-featured-overlay {
   position: absolute;
   left: 16px;
